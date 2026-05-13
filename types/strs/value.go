@@ -24,8 +24,9 @@ type Field struct {
 
 var _ result.Check = (*Field)(nil)
 
-func New(fieldPtr *string, rules ...Rule) *Field {
+func New(name string, fieldPtr *string, rules ...Rule) *Field {
 	return &Field{
+		FieldName: name,
 		Value: Value{
 			Original: fieldPtr,
 		},
