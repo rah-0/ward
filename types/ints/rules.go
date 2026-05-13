@@ -104,7 +104,6 @@ func RuleMultipleOf(n int64) Rule {
 	}}
 }
 
-
 // RuleOneOf passes when *v equals one of the allowed values.
 func RuleOneOf(allowed ...int64) Rule {
 	return Rule{ID: IDOneOf, Fn: func(v *int64) *Result {

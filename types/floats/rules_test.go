@@ -122,7 +122,6 @@ func TestMaxDecimalPlaces(t *testing.T) {
 	}
 }
 
-
 func TestOneOf(t *testing.T) {
 	if !run(floats.RuleOneOf(1.0, 2.5, 3.14), 2.5) {
 		t.Error("2.5 is in list, should pass")

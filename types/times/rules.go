@@ -4,15 +4,15 @@ package times
 import "time"
 
 const (
-	IDAfter          uint32 = 2
-	IDAfterOrEqual   uint32 = 3
-	IDBefore         uint32 = 4
-	IDBeforeOrEqual  uint32 = 5
-	IDInRange        uint32 = 6
-	IDIsZero         uint32 = 7
-	IDIsNotZero      uint32 = 8
-	IDOneOf          uint32 = 9
-	IDNotOneOf       uint32 = 10
+	IDAfter         uint32 = 2
+	IDAfterOrEqual  uint32 = 3
+	IDBefore        uint32 = 4
+	IDBeforeOrEqual uint32 = 5
+	IDInRange       uint32 = 6
+	IDIsZero        uint32 = 7
+	IDIsNotZero     uint32 = 8
+	IDOneOf         uint32 = 9
+	IDNotOneOf      uint32 = 10
 )
 
 // IDs lists all rule IDs in this package.
@@ -93,7 +93,6 @@ func RuleIsNotZero() Rule {
 		return &Result{}
 	}}
 }
-
 
 // RuleOneOf passes when *v equals one of the allowed time values.
 func RuleOneOf(allowed ...time.Time) Rule {

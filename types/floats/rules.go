@@ -126,7 +126,6 @@ func RuleMaxDecimalPlaces(n int) Rule {
 	}}
 }
 
-
 // RuleOneOf passes when *v equals one of the allowed values.
 func RuleOneOf(allowed ...float64) Rule {
 	return Rule{ID: IDOneOf, Fn: func(v *float64) *Result {

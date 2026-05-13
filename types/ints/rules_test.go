@@ -115,7 +115,6 @@ func TestMultipleOf(t *testing.T) {
 	}
 }
 
-
 func TestOneOf(t *testing.T) {
 	if !run(ints.RuleOneOf(1, 2, 3), 2) {
 		t.Error("2 is in [1,2,3], should pass")

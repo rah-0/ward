@@ -102,7 +102,6 @@ func TestIsNotZero(t *testing.T) {
 	}
 }
 
-
 func TestOneOf(t *testing.T) {
 	if !run(times.RuleOneOf(t1, t2), t1) {
 		t.Error("t1 is in list, should pass")

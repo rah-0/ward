@@ -101,7 +101,6 @@ func TestNonNegative(t *testing.T) {
 	}
 }
 
-
 func TestOneOf(t *testing.T) {
 	if !run(durations.RuleOneOf(time.Second, time.Minute), time.Second) {
 		t.Error("1s is in list, should pass")

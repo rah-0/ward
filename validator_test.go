@@ -61,5 +61,3 @@ func TestValidatorRun_StopOnFail(t *testing.T) {
 		t.Fatalf("expected 1 failure with StopOnFail, got %d", len(v.Failures()))
 	}
 }
-
-

@@ -94,7 +94,6 @@ func RuleNonNegative() Rule {
 	}}
 }
 
-
 // RuleOneOf passes when *v equals one of the allowed duration values.
 func RuleOneOf(allowed ...time.Duration) Rule {
 	return Rule{ID: IDOneOf, Fn: func(v *time.Duration) *Result {
