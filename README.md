@@ -1,3 +1,10 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/rah-0/ward)](https://goreportcard.com/report/github.com/rah-0/ward)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+<a href="https://www.buymeacoffee.com/rah.0" target="_blank">
+  <img src="https://cdn.buymeacoffee.com/buttons/v2/arial-orange.png" alt="Buy Me A Coffee" height="50" style="height:50px;">
+</a>
+
 # ward
 
 A typed, reflection-free, tag-free validation and sanitization library for Go.
@@ -147,5 +154,7 @@ Full comparison against `go-playground/validator` and `ozzo-validation`:
 [github.com/rah-0/benchmarks/tree/master/validator](https://github.com/rah-0/benchmarks/tree/master/validator#readme)
 
 ## ☕ Support
+Enjoying ward?
+If it saved you time or brought value to your project, feel free to show some support. Every bit is appreciated 🙂
 
 [![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/default-orange.png)](https://www.buymeacoffee.com/rah.0)
