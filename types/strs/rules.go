@@ -1,3 +1,4 @@
+// Package strs provides string validation and sanitization rules for ward.
 package strs
 
 import (
@@ -7,13 +8,9 @@ import (
 	"regexp"
 	"strings"
 	"unicode/utf8"
-
-	"github.com/rah-0/ward/result"
 )
 
 const (
-	TypeID uint32 = 2
-
 	IDNotEmpty         uint32 = 2
 	IDLengthMin        uint32 = 3
 	IDLengthMax        uint32 = 4
@@ -40,6 +37,9 @@ const (
 	IDUnescapeURL      uint32 = 25
 )
 
+// IDs lists all rule IDs in this package. Use this to enumerate available
+// rules for a frontend or documentation — iterate the slice rather than
+// maintaining a separate list alongside the constants.
 var IDs = []uint32{
 	IDNotEmpty, IDLengthMin, IDLengthMax, IDLengthExact, IDLengthBetween,
 	IDContains, IDNotContains, IDMatchesRegex,
@@ -51,252 +51,252 @@ var IDs = []uint32{
 	IDTrim, IDEscapeHTML, IDUnescapeURL,
 }
 
-func NotEmpty() Rule {
-	return Rule{ID: IDNotEmpty, Fn: func(v *Value) *result.Result {
-		if utf8.RuneCountInString(v.Current) > 0 {
+func RuleNotEmpty() Rule {
+	return Rule{ID: IDNotEmpty, Fn: func(s *string) *Result {
+		if utf8.RuneCountInString(*s) > 0 {
 			return nil
 		}
-		return &result.Result{}
+		return &Result{}
 	}}
 }
 
-func LengthMin(min int) Rule {
-	return Rule{ID: IDLengthMin, Fn: func(v *Value) *result.Result {
-		if utf8.RuneCountInString(v.Current) >= min {
+func RuleLengthMin(min int) Rule {
+	return Rule{ID: IDLengthMin, Fn: func(s *string) *Result {
+		if utf8.RuneCountInString(*s) >= min {
 			return nil
 		}
-		return &result.Result{
+		return &Result{
 			Arg1: min,
 		}
 	}}
 }
 
-func LengthMax(max int) Rule {
-	return Rule{ID: IDLengthMax, Fn: func(v *Value) *result.Result {
-		if utf8.RuneCountInString(v.Current) <= max {
+func RuleLengthMax(max int) Rule {
+	return Rule{ID: IDLengthMax, Fn: func(s *string) *Result {
+		if utf8.RuneCountInString(*s) <= max {
 			return nil
 		}
-		return &result.Result{
+		return &Result{
 			Arg1: max,
 		}
 	}}
 }
 
-func LengthExact(length int) Rule {
-	return Rule{ID: IDLengthExact, Fn: func(v *Value) *result.Result {
-		if utf8.RuneCountInString(v.Current) == length {
+func RuleLengthExact(length int) Rule {
+	return Rule{ID: IDLengthExact, Fn: func(s *string) *Result {
+		if utf8.RuneCountInString(*s) == length {
 			return nil
 		}
-		return &result.Result{
+		return &Result{
 			Arg1: length,
 		}
 	}}
 }
 
-func LengthBetween(min, max int) Rule {
-	return Rule{ID: IDLengthBetween, Fn: func(v *Value) *result.Result {
-		l := utf8.RuneCountInString(v.Current)
+func RuleLengthBetween(min, max int) Rule {
+	return Rule{ID: IDLengthBetween, Fn: func(s *string) *Result {
+		l := utf8.RuneCountInString(*s)
 		if l >= min && l <= max {
 			return nil
 		}
-		return &result.Result{
+		return &Result{
 			Arg1: min,
 			Arg2: max,
 		}
 	}}
 }
 
-func Contains(sub string) Rule {
-	return Rule{ID: IDContains, Fn: func(v *Value) *result.Result {
-		if strings.Contains(v.Current, sub) {
+func RuleContains(sub string) Rule {
+	return Rule{ID: IDContains, Fn: func(s *string) *Result {
+		if strings.Contains(*s, sub) {
 			return nil
 		}
-		return &result.Result{
+		return &Result{
 			Arg1: sub,
 		}
 	}}
 }
 
-func NotContains(sub string) Rule {
-	return Rule{ID: IDNotContains, Fn: func(v *Value) *result.Result {
-		if !strings.Contains(v.Current, sub) {
+func RuleNotContains(sub string) Rule {
+	return Rule{ID: IDNotContains, Fn: func(s *string) *Result {
+		if !strings.Contains(*s, sub) {
 			return nil
 		}
-		return &result.Result{
+		return &Result{
 			Arg1: sub,
 		}
 	}}
 }
 
-func MatchesRegex(pattern *regexp.Regexp) Rule {
-	return Rule{ID: IDMatchesRegex, Fn: func(v *Value) *result.Result {
-		if pattern.MatchString(v.Current) {
+func RuleMatchesRegex(pattern *regexp.Regexp) Rule {
+	return Rule{ID: IDMatchesRegex, Fn: func(s *string) *Result {
+		if pattern.MatchString(*s) {
 			return nil
 		}
-		return &result.Result{
+		return &Result{
 			Arg1: pattern.String(),
 		}
 	}}
 }
 
-func IsEmail() Rule {
-	return Rule{ID: IDIsEmail, Fn: func(v *Value) *result.Result {
-		_, err := mail.ParseAddress(v.Current)
+func RuleIsEmail() Rule {
+	return Rule{ID: IDIsEmail, Fn: func(s *string) *Result {
+		_, err := mail.ParseAddress(*s)
 		if err == nil {
 			return nil
 		}
-		return &result.Result{
+		return &Result{
 			Err: err,
 		}
 	}}
 }
 
-func IsSha512() Rule {
-	return Rule{ID: IDIsSha512, Fn: func(v *Value) *result.Result {
-		if len(v.Current) == 128 && RegexpSha512.MatchString(v.Current) {
+func RuleIsSha512() Rule {
+	return Rule{ID: IDIsSha512, Fn: func(s *string) *Result {
+		if len(*s) == 128 && RegexpSha512.MatchString(*s) {
 			return nil
 		}
-		return &result.Result{}
+		return &Result{}
 	}}
 }
 
-func HasLowercase() Rule {
-	return Rule{ID: IDHasLowercase, Fn: func(v *Value) *result.Result {
-		if RegexpHasLowercase.MatchString(v.Current) {
+func RuleHasLowercase() Rule {
+	return Rule{ID: IDHasLowercase, Fn: func(s *string) *Result {
+		if RegexpHasLowercase.MatchString(*s) {
 			return nil
 		}
-		return &result.Result{}
+		return &Result{}
 	}}
 }
 
-func HasUppercase() Rule {
-	return Rule{ID: IDHasUppercase, Fn: func(v *Value) *result.Result {
-		if RegexpHasUppercase.MatchString(v.Current) {
+func RuleHasUppercase() Rule {
+	return Rule{ID: IDHasUppercase, Fn: func(s *string) *Result {
+		if RegexpHasUppercase.MatchString(*s) {
 			return nil
 		}
-		return &result.Result{}
+		return &Result{}
 	}}
 }
 
-func IsDigitsOnly() Rule {
-	return Rule{ID: IDIsDigitsOnly, Fn: func(v *Value) *result.Result {
-		if RegexpDigitsOnly.MatchString(v.Current) {
+func RuleIsDigitsOnly() Rule {
+	return Rule{ID: IDIsDigitsOnly, Fn: func(s *string) *Result {
+		if RegexpDigitsOnly.MatchString(*s) {
 			return nil
 		}
-		return &result.Result{}
+		return &Result{}
 	}}
 }
 
-func IsURL() Rule {
-	return Rule{ID: IDIsURL, Fn: func(v *Value) *result.Result {
-		u, err := url.ParseRequestURI(v.Current)
+func RuleIsURL() Rule {
+	return Rule{ID: IDIsURL, Fn: func(s *string) *Result {
+		u, err := url.ParseRequestURI(*s)
 		if err == nil && u.Host != "" && (u.Scheme == "http" || u.Scheme == "https" || u.Scheme == "ftp" || u.Scheme == "ftps") {
 			return nil
 		}
-		return &result.Result{
+		return &Result{
 			Err: err,
 		}
 	}}
 }
 
-func IsNotURL() Rule {
-	return Rule{ID: IDIsNotURL, Fn: func(v *Value) *result.Result {
-		u, err := url.ParseRequestURI(v.Current)
+func RuleIsNotURL() Rule {
+	return Rule{ID: IDIsNotURL, Fn: func(s *string) *Result {
+		u, err := url.ParseRequestURI(*s)
 		if !(err == nil && u.Host != "" && (u.Scheme == "http" || u.Scheme == "https" || u.Scheme == "ftp" || u.Scheme == "ftps")) {
 			return nil
 		}
-		return &result.Result{
+		return &Result{
 			Err: err,
 		}
 	}}
 }
 
-func HasDigit() Rule {
-	return Rule{ID: IDHasDigit, Fn: func(v *Value) *result.Result {
-		if RegexpHasDigit.MatchString(v.Current) {
+func RuleHasDigit() Rule {
+	return Rule{ID: IDHasDigit, Fn: func(s *string) *Result {
+		if RegexpHasDigit.MatchString(*s) {
 			return nil
 		}
-		return &result.Result{}
+		return &Result{}
 	}}
 }
 
-func HasSpecialChar() Rule {
-	return Rule{ID: IDHasSpecialChar, Fn: func(v *Value) *result.Result {
-		if RegexpHasSpecialChar.MatchString(v.Current) {
+func RuleHasSpecialChar() Rule {
+	return Rule{ID: IDHasSpecialChar, Fn: func(s *string) *Result {
+		if RegexpHasSpecialChar.MatchString(*s) {
 			return nil
 		}
-		return &result.Result{}
+		return &Result{}
 	}}
 }
 
-func IsPasswordChars() Rule {
-	return Rule{ID: IDIsPasswordChars, Fn: func(v *Value) *result.Result {
-		if RegexpHasLowercase.MatchString(v.Current) &&
-			RegexpHasUppercase.MatchString(v.Current) &&
-			RegexpHasDigit.MatchString(v.Current) &&
-			RegexpHasSpecialChar.MatchString(v.Current) {
+func RuleIsPasswordChars() Rule {
+	return Rule{ID: IDIsPasswordChars, Fn: func(s *string) *Result {
+		if RegexpHasLowercase.MatchString(*s) &&
+			RegexpHasUppercase.MatchString(*s) &&
+			RegexpHasDigit.MatchString(*s) &&
+			RegexpHasSpecialChar.MatchString(*s) {
 			return nil
 		}
-		return &result.Result{}
+		return &Result{}
 	}}
 }
 
-func IsUsernameChars() Rule {
-	return Rule{ID: IDIsUsernameChars, Fn: func(v *Value) *result.Result {
-		if RegexpUsernameChars.MatchString(v.Current) {
+func RuleIsUsernameChars() Rule {
+	return Rule{ID: IDIsUsernameChars, Fn: func(s *string) *Result {
+		if RegexpUsernameChars.MatchString(*s) {
 			return nil
 		}
-		return &result.Result{}
+		return &Result{}
 	}}
 }
 
-func IsBoolString() Rule {
-	return Rule{ID: IDIsBoolString, Fn: func(v *Value) *result.Result {
-		s := strings.ToLower(strings.TrimSpace(v.Current))
-		if s == "1" || s == "0" || s == "true" || s == "false" {
+func RuleIsBoolString() Rule {
+	return Rule{ID: IDIsBoolString, Fn: func(s *string) *Result {
+		v := strings.ToLower(strings.TrimSpace(*s))
+		if v == "1" || v == "0" || v == "true" || v == "false" {
 			return nil
 		}
-		return &result.Result{}
+		return &Result{}
 	}}
 }
 
-func IsNonNegativeInt() Rule {
-	return Rule{ID: IDIsNonNegativeInt, Fn: func(v *Value) *result.Result {
-		if RegexpNonNegativeInt.MatchString(v.Current) {
+func RuleIsNonNegativeInt() Rule {
+	return Rule{ID: IDIsNonNegativeInt, Fn: func(s *string) *Result {
+		if RegexpNonNegativeInt.MatchString(*s) {
 			return nil
 		}
-		return &result.Result{}
+		return &Result{}
 	}}
 }
 
 // -----------------------------------------------------------------------------
-// Sanitizers — the following rules mutate v.Current
+// Sanitizers — the following rules mutate *s
 // -----------------------------------------------------------------------------
 
-func Trim() Rule {
-	return Rule{ID: IDTrim, Fn: func(v *Value) *result.Result {
-		v.Current = strings.TrimSpace(v.Current)
+func RuleTrim() Rule {
+	return Rule{ID: IDTrim, Fn: func(s *string) *Result {
+		*s = strings.TrimSpace(*s)
 		return nil
 	}}
 }
 
-func EscapeHTML() Rule {
-	return Rule{ID: IDEscapeHTML, Fn: func(v *Value) *result.Result {
-		v.Current = html.EscapeString(v.Current)
+func RuleEscapeHTML() Rule {
+	return Rule{ID: IDEscapeHTML, Fn: func(s *string) *Result {
+		*s = html.EscapeString(*s)
 		return nil
 	}}
 }
 
-func UnescapeURL() Rule {
-	return Rule{ID: IDUnescapeURL, Fn: func(v *Value) *result.Result {
-		decoded, err := url.QueryUnescape(v.Current)
+func RuleUnescapeURL() Rule {
+	return Rule{ID: IDUnescapeURL, Fn: func(s *string) *Result {
+		decoded, err := url.QueryUnescape(*s)
 		if err != nil {
-			v.Current = ""
-			return &result.Result{
+			*s = ""
+			return &Result{
 				Err: err,
 			}
 		}
-		v.Current = decoded
+		*s = decoded
 		return nil
 	}}
 }

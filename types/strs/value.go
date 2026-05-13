@@ -1,66 +1,24 @@
 package strs
 
-import (
-	"github.com/rah-0/ward/policy"
-	"github.com/rah-0/ward/result"
+import ward "github.com/rah-0/ward"
+
+const (
+	TypeID uint32 = 2
 )
 
-type Value struct {
-	Current  string
-	Original *string
-}
+type Rule = ward.Rule[string]
+type Field = ward.Field[string]
+type Result = ward.Result
 
-type Rule struct {
-	ID uint32
-	Fn func(*Value) *result.Result
-}
-
-type Field struct {
-	FieldName string
-	Policy    policy.Field
-	Value     Value
-	Rules     []Rule
-}
-
-var _ result.Check = (*Field)(nil)
-
+// New constructs a Field pointing directly to fieldPtr.
+// Sanitizers mutate *fieldPtr in place, so the source struct field reflects
+// the sanitized value after Run(). Callers that need to preserve the original
+// should copy it before calling Run().
 func New(name string, fieldPtr *string, rules ...Rule) *Field {
 	return &Field{
-		FieldName: name,
-		Value: Value{
-			Original: fieldPtr,
-		},
-		Rules: rules,
+		TypeID: TypeID,
+		Name:   name,
+		Value:  fieldPtr,
+		Rules:  rules,
 	}
-}
-
-func (f *Field) Validate() []*result.Result {
-	if f.Value.Original != nil {
-		f.Value.Current = *f.Value.Original
-	}
-
-	if err := f.Policy.Validate(); err != nil {
-		return []*result.Result{
-			{
-				FieldName: f.FieldName,
-				Err:       err,
-			},
-		}
-	}
-
-	var results []*result.Result
-	for _, rule := range f.Rules {
-		r := rule.Fn(&f.Value)
-		if r == nil {
-			continue
-		}
-		r.TypeID = TypeID
-		r.RuleID = rule.ID
-		r.FieldName = f.FieldName
-		results = append(results, r)
-		if f.Policy.StopOnFail {
-			break
-		}
-	}
-	return results
 }
