@@ -38,16 +38,19 @@ func (f *Field) RulesAddFromIDs(ids ...uint32) error {
 
 func (f *Field) Validate() []*result.Result {
 	if err := f.Policy.Validate(); err != nil {
-		return []*result.Result{{FieldName: f.FieldName, Valid: false, Err: err}}
+		return []*result.Result{{FieldName: f.FieldName, Err: err}}
 	}
 	var results []*result.Result
 	for _, rule := range f.Rules {
 		r := rule.Fn(&f.Value)
+		if r == nil {
+			continue
+		}
 		r.TypeID = TypeID
 		r.RuleID = rule.ID
 		r.FieldName = f.FieldName
 		results = append(results, r)
-		if !r.Valid && f.Policy.StopOnFail {
+		if f.Policy.StopOnFail {
 			break
 		}
 	}

@@ -29,32 +29,17 @@ func (v *Validate) Run() []*result.Result {
 	for _, check := range v.checks {
 		fieldResults := check.Validate()
 		v.results = append(v.results, fieldResults...)
-		if v.Policy.StopOnFail {
-			for _, r := range fieldResults {
-				if !r.Valid {
-					return v.results
-				}
-			}
+		if v.Policy.StopOnFail && len(fieldResults) > 0 {
+			return v.results
 		}
 	}
 	return v.results
 }
 
 func (v *Validate) HasFailures() bool {
-	for _, r := range v.results {
-		if !r.Valid {
-			return true
-		}
-	}
-	return false
+	return len(v.results) > 0
 }
 
 func (v *Validate) Failures() []*result.Result {
-	var out []*result.Result
-	for _, r := range v.results {
-		if !r.Valid {
-			out = append(out, r)
-		}
-	}
-	return out
+	return v.results
 }
