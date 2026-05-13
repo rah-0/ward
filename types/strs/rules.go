@@ -50,23 +50,6 @@ var IDs = []uint32{
 	IDTrim, IDEscapeHTML, IDUnescapeURL,
 }
 
-type Rule struct {
-	ID uint32
-	Fn func(*Value) *result.Result
-}
-
-func RuleSet(r Rule) error {
-	return config.RuleSet(TypeID, r.ID, r)
-}
-
-func RuleGet(id uint32) (Rule, error) {
-	raw, err := config.RuleGet(TypeID, id)
-	if err != nil {
-		return Rule{}, err
-	}
-	return raw.(Rule), nil
-}
-
 func NotEmpty() Rule {
 	return Rule{ID: IDNotEmpty, Fn: func(v *Value) *result.Result {
 		return &result.Result{Valid: utf8.RuneCountInString(v.Current) > 0}

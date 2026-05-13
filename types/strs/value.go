@@ -1,6 +1,7 @@
 package strs
 
 import (
+	"github.com/rah-0/ward/config"
 	"github.com/rah-0/ward/policy"
 	"github.com/rah-0/ward/result"
 )
@@ -10,7 +11,10 @@ type Value struct {
 	Original *string
 }
 
-var _ result.Check = (*Field)(nil)
+type Rule struct {
+	ID uint32
+	Fn func(*Value) *result.Result
+}
 
 type Field struct {
 	FieldName string
@@ -19,18 +23,23 @@ type Field struct {
 	Rules     []Rule
 }
 
+var _ result.Check = (*Field)(nil)
+
 func (f *Field) RulesAddFromIDs(ids ...uint32) error {
 	for _, id := range ids {
-		r, err := RuleGet(id)
+		raw, err := config.RuleGet(TypeID, id)
 		if err != nil {
 			return err
 		}
-		f.Rules = append(f.Rules, r)
+		f.Rules = append(f.Rules, raw.(Rule))
 	}
 	return nil
 }
 
 func (f *Field) Validate() []*result.Result {
+	if err := f.Policy.Validate(); err != nil {
+		return []*result.Result{{FieldName: f.FieldName, Valid: false, Err: err}}
+	}
 	var results []*result.Result
 	for _, rule := range f.Rules {
 		r := rule.Fn(&f.Value)
