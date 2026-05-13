@@ -1,4 +1,4 @@
-package config
+package strs
 
 import "regexp"
 

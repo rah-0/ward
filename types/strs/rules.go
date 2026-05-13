@@ -8,7 +8,6 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/rah-0/ward/config"
 	"github.com/rah-0/ward/result"
 )
 
@@ -43,8 +42,10 @@ const (
 
 var IDs = []uint32{
 	IDNotEmpty, IDLengthMin, IDLengthMax, IDLengthExact, IDLengthBetween,
-	IDContains, IDNotContains, IDMatchesRegex, IDIsEmail, IDIsSha512,
-	IDHasLowercase, IDHasUppercase, IDIsDigitsOnly, IDIsURL, IDIsNotURL,
+	IDContains, IDNotContains, IDMatchesRegex,
+	IDIsEmail, IDIsSha512,
+	IDHasLowercase, IDHasUppercase, IDIsDigitsOnly,
+	IDIsURL, IDIsNotURL,
 	IDHasDigit, IDHasSpecialChar, IDIsPasswordChars, IDIsUsernameChars,
 	IDIsBoolString, IDIsNonNegativeInt,
 	IDTrim, IDEscapeHTML, IDUnescapeURL,
@@ -64,7 +65,9 @@ func LengthMin(min int) Rule {
 		if utf8.RuneCountInString(v.Current) >= min {
 			return nil
 		}
-		return &result.Result{Arg1: min}
+		return &result.Result{
+			Arg1: min,
+		}
 	}}
 }
 
@@ -73,7 +76,9 @@ func LengthMax(max int) Rule {
 		if utf8.RuneCountInString(v.Current) <= max {
 			return nil
 		}
-		return &result.Result{Arg1: max}
+		return &result.Result{
+			Arg1: max,
+		}
 	}}
 }
 
@@ -82,7 +87,9 @@ func LengthExact(length int) Rule {
 		if utf8.RuneCountInString(v.Current) == length {
 			return nil
 		}
-		return &result.Result{Arg1: length}
+		return &result.Result{
+			Arg1: length,
+		}
 	}}
 }
 
@@ -92,7 +99,10 @@ func LengthBetween(min, max int) Rule {
 		if l >= min && l <= max {
 			return nil
 		}
-		return &result.Result{Arg1: min, Arg2: max}
+		return &result.Result{
+			Arg1: min,
+			Arg2: max,
+		}
 	}}
 }
 
@@ -101,7 +111,9 @@ func Contains(sub string) Rule {
 		if strings.Contains(v.Current, sub) {
 			return nil
 		}
-		return &result.Result{Arg1: sub}
+		return &result.Result{
+			Arg1: sub,
+		}
 	}}
 }
 
@@ -110,7 +122,9 @@ func NotContains(sub string) Rule {
 		if !strings.Contains(v.Current, sub) {
 			return nil
 		}
-		return &result.Result{Arg1: sub}
+		return &result.Result{
+			Arg1: sub,
+		}
 	}}
 }
 
@@ -119,7 +133,9 @@ func MatchesRegex(pattern *regexp.Regexp) Rule {
 		if pattern.MatchString(v.Current) {
 			return nil
 		}
-		return &result.Result{Arg1: pattern.String()}
+		return &result.Result{
+			Arg1: pattern.String(),
+		}
 	}}
 }
 
@@ -129,13 +145,15 @@ func IsEmail() Rule {
 		if err == nil {
 			return nil
 		}
-		return &result.Result{Err: err}
+		return &result.Result{
+			Err: err,
+		}
 	}}
 }
 
 func IsSha512() Rule {
 	return Rule{ID: IDIsSha512, Fn: func(v *Value) *result.Result {
-		if len(v.Current) == 128 && config.RegexpSha512.MatchString(v.Current) {
+		if len(v.Current) == 128 && RegexpSha512.MatchString(v.Current) {
 			return nil
 		}
 		return &result.Result{}
@@ -144,7 +162,7 @@ func IsSha512() Rule {
 
 func HasLowercase() Rule {
 	return Rule{ID: IDHasLowercase, Fn: func(v *Value) *result.Result {
-		if config.RegexpHasLowercase.MatchString(v.Current) {
+		if RegexpHasLowercase.MatchString(v.Current) {
 			return nil
 		}
 		return &result.Result{}
@@ -153,7 +171,7 @@ func HasLowercase() Rule {
 
 func HasUppercase() Rule {
 	return Rule{ID: IDHasUppercase, Fn: func(v *Value) *result.Result {
-		if config.RegexpHasUppercase.MatchString(v.Current) {
+		if RegexpHasUppercase.MatchString(v.Current) {
 			return nil
 		}
 		return &result.Result{}
@@ -162,7 +180,7 @@ func HasUppercase() Rule {
 
 func IsDigitsOnly() Rule {
 	return Rule{ID: IDIsDigitsOnly, Fn: func(v *Value) *result.Result {
-		if config.RegexpDigitsOnly.MatchString(v.Current) {
+		if RegexpDigitsOnly.MatchString(v.Current) {
 			return nil
 		}
 		return &result.Result{}
@@ -175,7 +193,9 @@ func IsURL() Rule {
 		if err == nil && u.Host != "" && (u.Scheme == "http" || u.Scheme == "https" || u.Scheme == "ftp" || u.Scheme == "ftps") {
 			return nil
 		}
-		return &result.Result{Err: err}
+		return &result.Result{
+			Err: err,
+		}
 	}}
 }
 
@@ -185,13 +205,15 @@ func IsNotURL() Rule {
 		if !(err == nil && u.Host != "" && (u.Scheme == "http" || u.Scheme == "https" || u.Scheme == "ftp" || u.Scheme == "ftps")) {
 			return nil
 		}
-		return &result.Result{Err: err}
+		return &result.Result{
+			Err: err,
+		}
 	}}
 }
 
 func HasDigit() Rule {
 	return Rule{ID: IDHasDigit, Fn: func(v *Value) *result.Result {
-		if config.RegexpHasDigit.MatchString(v.Current) {
+		if RegexpHasDigit.MatchString(v.Current) {
 			return nil
 		}
 		return &result.Result{}
@@ -200,7 +222,7 @@ func HasDigit() Rule {
 
 func HasSpecialChar() Rule {
 	return Rule{ID: IDHasSpecialChar, Fn: func(v *Value) *result.Result {
-		if config.RegexpHasSpecialChar.MatchString(v.Current) {
+		if RegexpHasSpecialChar.MatchString(v.Current) {
 			return nil
 		}
 		return &result.Result{}
@@ -209,10 +231,10 @@ func HasSpecialChar() Rule {
 
 func IsPasswordChars() Rule {
 	return Rule{ID: IDIsPasswordChars, Fn: func(v *Value) *result.Result {
-		if config.RegexpHasLowercase.MatchString(v.Current) &&
-			config.RegexpHasUppercase.MatchString(v.Current) &&
-			config.RegexpHasDigit.MatchString(v.Current) &&
-			config.RegexpHasSpecialChar.MatchString(v.Current) {
+		if RegexpHasLowercase.MatchString(v.Current) &&
+			RegexpHasUppercase.MatchString(v.Current) &&
+			RegexpHasDigit.MatchString(v.Current) &&
+			RegexpHasSpecialChar.MatchString(v.Current) {
 			return nil
 		}
 		return &result.Result{}
@@ -221,7 +243,7 @@ func IsPasswordChars() Rule {
 
 func IsUsernameChars() Rule {
 	return Rule{ID: IDIsUsernameChars, Fn: func(v *Value) *result.Result {
-		if config.RegexpUsernameChars.MatchString(v.Current) {
+		if RegexpUsernameChars.MatchString(v.Current) {
 			return nil
 		}
 		return &result.Result{}
@@ -240,7 +262,7 @@ func IsBoolString() Rule {
 
 func IsNonNegativeInt() Rule {
 	return Rule{ID: IDIsNonNegativeInt, Fn: func(v *Value) *result.Result {
-		if config.RegexpNonNegativeInt.MatchString(v.Current) {
+		if RegexpNonNegativeInt.MatchString(v.Current) {
 			return nil
 		}
 		return &result.Result{}
@@ -270,7 +292,9 @@ func UnescapeURL() Rule {
 		decoded, err := url.QueryUnescape(v.Current)
 		if err != nil {
 			v.Current = ""
-			return &result.Result{Err: err}
+			return &result.Result{
+				Err: err,
+			}
 		}
 		v.Current = decoded
 		return nil
