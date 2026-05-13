@@ -253,3 +253,50 @@ func TestUnescapeURL_Invalid(t *testing.T) {
 		t.Errorf("expected empty string on error, got %q", s)
 	}
 }
+
+func TestNormalizeEmail(t *testing.T) {
+	// plain address — passes, no change
+	s := "user@example.com"
+	if strs.RuleNormalizeEmail().Fn(&s) != nil {
+		t.Error("plain address should pass")
+	}
+	if s != "user@example.com" {
+		t.Errorf("plain address should be unchanged, got %q", s)
+	}
+
+	// display name stripped
+	s = "John Doe <john@example.com>"
+	if strs.RuleNormalizeEmail().Fn(&s) != nil {
+		t.Error("display name format should pass")
+	}
+	if s != "john@example.com" {
+		t.Errorf("expected display name stripped, got %q", s)
+	}
+}
+
+func TestOneOf(t *testing.T) {
+	if !run(strs.RuleOneOf("active", "inactive"), "active") {
+		t.Error("active should pass")
+	}
+	if !run(strs.RuleOneOf("active", "inactive"), "inactive") {
+		t.Error("inactive should pass")
+	}
+	if run(strs.RuleOneOf("active", "inactive"), "deleted") {
+		t.Error("deleted should fail")
+	}
+	if run(strs.RuleOneOf("active", "inactive"), "") {
+		t.Error("empty should fail")
+	}
+}
+
+func TestNotOneOf(t *testing.T) {
+	if !run(strs.RuleNotOneOf("admin", "root"), "user") {
+		t.Error("user is not excluded, should pass")
+	}
+	if run(strs.RuleNotOneOf("admin", "root"), "admin") {
+		t.Error("admin is excluded, should fail")
+	}
+	if run(strs.RuleNotOneOf("admin", "root"), "root") {
+		t.Error("root is excluded, should fail")
+	}
+}

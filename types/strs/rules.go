@@ -35,6 +35,9 @@ const (
 	IDTrim             uint32 = 23
 	IDEscapeHTML       uint32 = 24
 	IDUnescapeURL      uint32 = 25
+	IDNormalizeEmail   uint32 = 26
+	IDOneOf            uint32 = 27
+	IDNotOneOf         uint32 = 28
 )
 
 // IDs lists all rule IDs in this package. Use this to enumerate available
@@ -49,6 +52,8 @@ var IDs = []uint32{
 	IDHasDigit, IDHasSpecialChar, IDIsPasswordChars, IDIsUsernameChars,
 	IDIsBoolString, IDIsNonNegativeInt,
 	IDTrim, IDEscapeHTML, IDUnescapeURL,
+	IDNormalizeEmail,
+	IDOneOf, IDNotOneOf,
 }
 
 func RuleNotEmpty() Rule {
@@ -297,6 +302,45 @@ func RuleUnescapeURL() Rule {
 			}
 		}
 		*s = decoded
+		return nil
+	}}
+}
+
+// RuleNormalizeEmail is a sanitizer that parses the address, strips any display
+// name (e.g. "John Doe <john@example.com>" → "john@example.com"), and writes
+// the canonical address back to *s. Returns a failure if the value cannot be
+// parsed as a valid email at all.
+func RuleNormalizeEmail() Rule {
+	return Rule{ID: IDNormalizeEmail, Fn: func(s *string) *Result {
+		addr, err := mail.ParseAddress(*s)
+		if err != nil {
+			return &Result{Err: err}
+		}
+		*s = addr.Address
+		return nil
+	}}
+}
+
+// RuleOneOf passes when *s equals one of the allowed values.
+func RuleOneOf(allowed ...string) Rule {
+	return Rule{ID: IDOneOf, Fn: func(s *string) *Result {
+		for _, a := range allowed {
+			if *s == a {
+				return nil
+			}
+		}
+		return &Result{Arg1: allowed}
+	}}
+}
+
+// RuleNotOneOf passes when *s does not equal any of the excluded values.
+func RuleNotOneOf(excluded ...string) Rule {
+	return Rule{ID: IDNotOneOf, Fn: func(s *string) *Result {
+		for _, e := range excluded {
+			if *s == e {
+				return &Result{Arg1: excluded}
+			}
+		}
 		return nil
 	}}
 }
