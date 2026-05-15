@@ -34,26 +34,26 @@ func TestGreaterThanOrEqual(t *testing.T) {
 	}
 }
 
-func TestLessThan(t *testing.T) {
-	if !run(ints.RuleLessThan(5), 4) {
+func TestLesserThan(t *testing.T) {
+	if !run(ints.RuleLesserThan(5), 4) {
 		t.Error("4 < 5 should pass")
 	}
-	if run(ints.RuleLessThan(5), 5) {
+	if run(ints.RuleLesserThan(5), 5) {
 		t.Error("5 < 5 should fail")
 	}
-	if run(ints.RuleLessThan(5), 6) {
+	if run(ints.RuleLesserThan(5), 6) {
 		t.Error("6 < 5 should fail")
 	}
 }
 
-func TestLessThanOrEqual(t *testing.T) {
-	if !run(ints.RuleLessThanOrEqual(5), 5) {
+func TestLesserThanOrEqual(t *testing.T) {
+	if !run(ints.RuleLesserThanOrEqual(5), 5) {
 		t.Error("5 <= 5 should pass")
 	}
-	if !run(ints.RuleLessThanOrEqual(5), 4) {
+	if !run(ints.RuleLesserThanOrEqual(5), 4) {
 		t.Error("4 <= 5 should pass")
 	}
-	if run(ints.RuleLessThanOrEqual(5), 6) {
+	if run(ints.RuleLesserThanOrEqual(5), 6) {
 		t.Error("6 <= 5 should fail")
 	}
 }

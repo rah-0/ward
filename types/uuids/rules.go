@@ -11,22 +11,19 @@ package uuids
 import "github.com/google/uuid"
 
 const (
-	IDIsValidV4   uint32 = 2
-	IDIsNotNilV4  uint32 = 3
-	IDOneOfV4     uint32 = 4
-	IDNotOneOfV4  uint32 = 5
+	IDIsValidV4  uint32 = 2
+	IDIsNotNilV4 uint32 = 3
+	IDOneOfV4    uint32 = 4
+	IDNotOneOfV4 uint32 = 5
 )
 
-// IDsV4 lists the rule IDs that validate UUIDv4 values.
-var IDsV4 = []uint32{
-	IDIsValidV4,
-	IDIsNotNilV4,
-	IDOneOfV4, IDNotOneOfV4,
+// IDs maps every rule ID in this package to its name.
+var IDs = map[uint32]string{
+	IDIsValidV4:  "IsValidV4",
+	IDIsNotNilV4: "IsNotNilV4",
+	IDOneOfV4:    "OneOfV4",
+	IDNotOneOfV4: "NotOneOfV4",
 }
-
-// IDs is the union of every rule ID exposed by this package, across all
-// UUID versions. Frontends can iterate it to enumerate available rules.
-var IDs = IDsV4
 
 // -----------------------------------------------------------------------------
 // UUIDv4

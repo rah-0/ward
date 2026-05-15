@@ -4,8 +4,8 @@ package ints
 const (
 	IDGreaterThan        uint32 = 2
 	IDGreaterThanOrEqual uint32 = 3
-	IDLessThan           uint32 = 4
-	IDLessThanOrEqual    uint32 = 5
+	IDLesserThan         uint32 = 4
+	IDLesserThanOrEqual  uint32 = 5
 	IDInRange            uint32 = 6
 	IDPositive           uint32 = 7
 	IDPositiveOrZero     uint32 = 8
@@ -22,17 +22,26 @@ const (
 	IDAbs                uint32 = 19
 )
 
-// IDs lists all rule IDs in this package.
-var IDs = []uint32{
-	IDGreaterThan, IDGreaterThanOrEqual,
-	IDLessThan, IDLessThanOrEqual,
-	IDInRange,
-	IDPositive, IDPositiveOrZero,
-	IDMultipleOf,
-	IDOneOf, IDNotOneOf,
-	IDNegative, IDNegativeOrZero,
-	IDIsEven, IDIsOdd,
-	IDClamp, IDClampMin, IDClampMax, IDAbs,
+// IDs maps every rule ID in this package to its name.
+var IDs = map[uint32]string{
+	IDGreaterThan:        "GreaterThan",
+	IDGreaterThanOrEqual: "GreaterThanOrEqual",
+	IDLesserThan:         "LesserThan",
+	IDLesserThanOrEqual:  "LesserThanOrEqual",
+	IDInRange:            "InRange",
+	IDPositive:           "Positive",
+	IDPositiveOrZero:     "PositiveOrZero",
+	IDMultipleOf:         "MultipleOf",
+	IDOneOf:              "OneOf",
+	IDNotOneOf:           "NotOneOf",
+	IDNegative:           "Negative",
+	IDNegativeOrZero:     "NegativeOrZero",
+	IDIsEven:             "IsEven",
+	IDIsOdd:              "IsOdd",
+	IDClamp:              "Clamp",
+	IDClampMin:           "ClampMin",
+	IDClampMax:           "ClampMax",
+	IDAbs:                "Abs",
 }
 
 // RuleGreaterThan passes when v > min.
@@ -55,9 +64,9 @@ func RuleGreaterThanOrEqual(min int64) Rule {
 	}}
 }
 
-// RuleLessThan passes when v < max.
-func RuleLessThan(max int64) Rule {
-	return Rule{ID: IDLessThan, Fn: func(v *int64) *Result {
+// RuleLesserThan passes when v < max.
+func RuleLesserThan(max int64) Rule {
+	return Rule{ID: IDLesserThan, Fn: func(v *int64) *Result {
 		if *v < max {
 			return nil
 		}
@@ -65,9 +74,9 @@ func RuleLessThan(max int64) Rule {
 	}}
 }
 
-// RuleLessThanOrEqual passes when v <= max.
-func RuleLessThanOrEqual(max int64) Rule {
-	return Rule{ID: IDLessThanOrEqual, Fn: func(v *int64) *Result {
+// RuleLesserThanOrEqual passes when v <= max.
+func RuleLesserThanOrEqual(max int64) Rule {
+	return Rule{ID: IDLesserThanOrEqual, Fn: func(v *int64) *Result {
 		if *v <= max {
 			return nil
 		}

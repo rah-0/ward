@@ -6,9 +6,10 @@ const (
 	IDIsFalse uint32 = 3
 )
 
-// IDs lists all rule IDs in this package.
-var IDs = []uint32{
-	IDIsTrue, IDIsFalse,
+// IDs maps every rule ID in this package to its name.
+var IDs = map[uint32]string{
+	IDIsTrue:  "IsTrue",
+	IDIsFalse: "IsFalse",
 }
 
 // RuleIsTrue passes when v is true.

@@ -35,26 +35,26 @@ func TestGreaterThanOrEqual(t *testing.T) {
 	}
 }
 
-func TestLessThan(t *testing.T) {
-	if !run(durations.RuleLessThan(time.Second), time.Millisecond) {
+func TestLesserThan(t *testing.T) {
+	if !run(durations.RuleLesserThan(time.Second), time.Millisecond) {
 		t.Error("1ms < 1s should pass")
 	}
-	if run(durations.RuleLessThan(time.Second), time.Second) {
+	if run(durations.RuleLesserThan(time.Second), time.Second) {
 		t.Error("1s < 1s should fail")
 	}
-	if run(durations.RuleLessThan(time.Second), 2*time.Second) {
+	if run(durations.RuleLesserThan(time.Second), 2*time.Second) {
 		t.Error("2s < 1s should fail")
 	}
 }
 
-func TestLessThanOrEqual(t *testing.T) {
-	if !run(durations.RuleLessThanOrEqual(time.Second), time.Second) {
+func TestLesserThanOrEqual(t *testing.T) {
+	if !run(durations.RuleLesserThanOrEqual(time.Second), time.Second) {
 		t.Error("1s <= 1s should pass")
 	}
-	if !run(durations.RuleLessThanOrEqual(time.Second), time.Millisecond) {
+	if !run(durations.RuleLesserThanOrEqual(time.Second), time.Millisecond) {
 		t.Error("1ms <= 1s should pass")
 	}
-	if run(durations.RuleLessThanOrEqual(time.Second), 2*time.Second) {
+	if run(durations.RuleLesserThanOrEqual(time.Second), 2*time.Second) {
 		t.Error("2s <= 1s should fail")
 	}
 }

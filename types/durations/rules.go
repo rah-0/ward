@@ -6,8 +6,8 @@ import "time"
 const (
 	IDGreaterThan        uint32 = 2
 	IDGreaterThanOrEqual uint32 = 3
-	IDLessThan           uint32 = 4
-	IDLessThanOrEqual    uint32 = 5
+	IDLesserThan         uint32 = 4
+	IDLesserThanOrEqual  uint32 = 5
 	IDInRange            uint32 = 6
 	IDPositive           uint32 = 7
 	IDPositiveOrZero     uint32 = 8
@@ -15,13 +15,17 @@ const (
 	IDNotOneOf           uint32 = 10
 )
 
-// IDs lists all rule IDs in this package.
-var IDs = []uint32{
-	IDGreaterThan, IDGreaterThanOrEqual,
-	IDLessThan, IDLessThanOrEqual,
-	IDInRange,
-	IDPositive, IDPositiveOrZero,
-	IDOneOf, IDNotOneOf,
+// IDs maps every rule ID in this package to its name.
+var IDs = map[uint32]string{
+	IDGreaterThan:        "GreaterThan",
+	IDGreaterThanOrEqual: "GreaterThanOrEqual",
+	IDLesserThan:         "LesserThan",
+	IDLesserThanOrEqual:  "LesserThanOrEqual",
+	IDInRange:            "InRange",
+	IDPositive:           "Positive",
+	IDPositiveOrZero:     "PositiveOrZero",
+	IDOneOf:              "OneOf",
+	IDNotOneOf:           "NotOneOf",
 }
 
 // RuleGreaterThan passes when v > min.
@@ -44,9 +48,9 @@ func RuleGreaterThanOrEqual(min time.Duration) Rule {
 	}}
 }
 
-// RuleLessThan passes when v < max.
-func RuleLessThan(max time.Duration) Rule {
-	return Rule{ID: IDLessThan, Fn: func(v *time.Duration) *Result {
+// RuleLesserThan passes when v < max.
+func RuleLesserThan(max time.Duration) Rule {
+	return Rule{ID: IDLesserThan, Fn: func(v *time.Duration) *Result {
 		if *v < max {
 			return nil
 		}
@@ -54,9 +58,9 @@ func RuleLessThan(max time.Duration) Rule {
 	}}
 }
 
-// RuleLessThanOrEqual passes when v <= max.
-func RuleLessThanOrEqual(max time.Duration) Rule {
-	return Rule{ID: IDLessThanOrEqual, Fn: func(v *time.Duration) *Result {
+// RuleLesserThanOrEqual passes when v <= max.
+func RuleLesserThanOrEqual(max time.Duration) Rule {
+	return Rule{ID: IDLesserThanOrEqual, Fn: func(v *time.Duration) *Result {
 		if *v <= max {
 			return nil
 		}

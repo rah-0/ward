@@ -29,20 +29,20 @@ func TestGreaterThanOrEqual(t *testing.T) {
 	}
 }
 
-func TestLessThan(t *testing.T) {
-	if !run(floats.RuleLessThan(1.0), 0.9) {
+func TestLesserThan(t *testing.T) {
+	if !run(floats.RuleLesserThan(1.0), 0.9) {
 		t.Error("0.9 < 1.0 should pass")
 	}
-	if run(floats.RuleLessThan(1.0), 1.0) {
+	if run(floats.RuleLesserThan(1.0), 1.0) {
 		t.Error("1.0 < 1.0 should fail")
 	}
 }
 
-func TestLessThanOrEqual(t *testing.T) {
-	if !run(floats.RuleLessThanOrEqual(1.0), 1.0) {
+func TestLesserThanOrEqual(t *testing.T) {
+	if !run(floats.RuleLesserThanOrEqual(1.0), 1.0) {
 		t.Error("1.0 <= 1.0 should pass")
 	}
-	if run(floats.RuleLessThanOrEqual(1.0), 1.1) {
+	if run(floats.RuleLesserThanOrEqual(1.0), 1.1) {
 		t.Error("1.1 <= 1.0 should fail")
 	}
 }

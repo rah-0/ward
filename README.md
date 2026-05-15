@@ -11,7 +11,7 @@ A typed, reflection-free, tag-free validation and sanitization library for Go.
 
 - No struct tags
 - No reflection
-- No global registry
+- No global registry — type packages export a mutable `IDs` map for app-level extensions
 - Stdlib only
 - Generic: works with any type
 
@@ -104,12 +104,12 @@ Similarly, `RuleLengthBetween(5, 50)` returns `Arg1=5, Arg2=50`, and `RuleContai
 
 ### Exposing available rules
 
-Every type package exports an `IDs` slice listing all rule IDs and a `TypeID` constant identifying the package. These can be served from a single endpoint so the frontend always knows what validations exist:
+Every type package exports an `IDs` map (`map[uint32]string`) associating each rule ID with its name, and a `TypeID` constant identifying the package. These can be served from a single endpoint so the frontend always knows what validations exist:
 
 ```go
 // GET /api/validation-rules
 func GetValidationRules(w http.ResponseWriter, r *http.Request) {
-    rules := map[uint32][]uint32{
+    rules := map[uint32]map[uint32]string{
         strs.TypeID: strs.IDs,
         // add further type packages here as the API grows
     }
@@ -117,10 +117,17 @@ func GetValidationRules(w http.ResponseWriter, r *http.Request) {
 }
 
 // response:
-// {"2":[2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25]}
+// {"2":{"2":"NotEmpty","3":"LengthMin","4":"LengthMax",...}}
 ```
 
 When a failure arrives at the frontend with `TypeID=2, RuleID=3`, it looks up TypeID 2 → strs, RuleID 3 → `LengthMin`, and can display the right message using `Arg1` as the actual minimum value. The frontend never hardcodes validation logic — it derives everything from what the backend exposes.
+
+Applications can also register custom rules by writing to the map before generating frontend constants:
+
+```go
+strs.IDs[1000] = "PasswordsMatch"
+strs.IDs[1001] = "UsernameAvailable"
+```
 
 ## StopOnFail
 

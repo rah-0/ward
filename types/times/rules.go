@@ -19,15 +19,21 @@ const (
 	IDIsWeekend     uint32 = 14
 )
 
-// IDs lists all rule IDs in this package.
-var IDs = []uint32{
-	IDAfter, IDAfterOrEqual,
-	IDBefore, IDBeforeOrEqual,
-	IDInRange,
-	IDIsZero, IDIsNotZero,
-	IDOneOf, IDNotOneOf,
-	IDIsPast, IDIsFuture,
-	IDIsWeekday, IDIsWeekend,
+// IDs maps every rule ID in this package to its name.
+var IDs = map[uint32]string{
+	IDAfter:         "After",
+	IDAfterOrEqual:  "AfterOrEqual",
+	IDBefore:        "Before",
+	IDBeforeOrEqual: "BeforeOrEqual",
+	IDInRange:       "InRange",
+	IDIsZero:        "IsZero",
+	IDIsNotZero:     "IsNotZero",
+	IDOneOf:         "OneOf",
+	IDNotOneOf:      "NotOneOf",
+	IDIsPast:        "IsPast",
+	IDIsFuture:      "IsFuture",
+	IDIsWeekday:     "IsWeekday",
+	IDIsWeekend:     "IsWeekend",
 }
 
 // RuleAfter passes when v is strictly after threshold.
