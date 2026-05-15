@@ -2,7 +2,7 @@
 package loginform
 
 import (
-	ward "github.com/rah-0/ward"
+	"github.com/rah-0/ward"
 	"github.com/rah-0/ward/types/strs"
 )
 

@@ -1,7 +1,7 @@
 // Package phonenumber demonstrates a custom ward type package where T is a struct.
 package phonenumber
 
-import ward "github.com/rah-0/ward"
+import "github.com/rah-0/ward"
 
 const TypeID uint32 = 100
 

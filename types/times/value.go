@@ -3,7 +3,7 @@ package times
 import (
 	"time"
 
-	ward "github.com/rah-0/ward"
+	"github.com/rah-0/ward"
 )
 
 const (

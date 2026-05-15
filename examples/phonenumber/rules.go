@@ -4,7 +4,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	ward "github.com/rah-0/ward"
+	"github.com/rah-0/ward"
 )
 
 const (

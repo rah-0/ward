@@ -11,6 +11,8 @@ import (
 	"regexp"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/rah-0/ward"
 )
 
 const (
@@ -104,6 +106,11 @@ var IDs = map[uint32]string{
 	IDToLower:          "ToLower",
 	IDToUpper:          "ToUpper",
 	IDStripHTMLTags:    "StripHTMLTags",
+}
+
+// IDsAdd registers a custom rule name and returns its automatically assigned ID.
+func IDsAdd(name string) uint32 {
+	return ward.IDsAdd(IDs, name)
 }
 
 func RuleNotEmpty() Rule {

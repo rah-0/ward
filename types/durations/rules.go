@@ -1,7 +1,11 @@
 // Package durations provides time.Duration validation rules for ward.
 package durations
 
-import "time"
+import (
+	"time"
+
+	"github.com/rah-0/ward"
+)
 
 const (
 	IDGreaterThan        uint32 = 2
@@ -26,6 +30,11 @@ var IDs = map[uint32]string{
 	IDPositiveOrZero:     "PositiveOrZero",
 	IDOneOf:              "OneOf",
 	IDNotOneOf:           "NotOneOf",
+}
+
+// IDsAdd registers a custom rule name and returns its automatically assigned ID.
+func IDsAdd(name string) uint32 {
+	return ward.IDsAdd(IDs, name)
 }
 
 // RuleGreaterThan passes when v > min.

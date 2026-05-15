@@ -3,7 +3,7 @@ package percentage_test
 import (
 	"testing"
 
-	ward "github.com/rah-0/ward"
+	"github.com/rah-0/ward"
 	"github.com/rah-0/ward/examples/percentage"
 )
 

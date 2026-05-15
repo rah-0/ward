@@ -1,6 +1,6 @@
 package floats
 
-import ward "github.com/rah-0/ward"
+import "github.com/rah-0/ward"
 
 const (
 	TypeID uint32 = 4

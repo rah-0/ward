@@ -105,7 +105,7 @@ func RuleNormalize() Rule {
 ```go
 package mytype
 
-import ward "github.com/rah-0/ward"
+import "github.com/rah-0/ward"
 
 type MyType int
 

@@ -7,3 +7,17 @@ type Rule[T any] struct {
 	ID uint32
 	Fn func(*T) *Result
 }
+
+// IDsAdd registers a custom rule name into ids and returns its automatically
+// assigned ID. The ID is one greater than the current maximum key in the map.
+func IDsAdd(ids map[uint32]string, name string) uint32 {
+	var maxID uint32
+	for id := range ids {
+		if id > maxID {
+			maxID = id
+		}
+	}
+	maxID++
+	ids[maxID] = name
+	return maxID
+}

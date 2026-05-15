@@ -3,7 +3,7 @@ package ward_test
 import (
 	"testing"
 
-	ward "github.com/rah-0/ward"
+	"github.com/rah-0/ward"
 )
 
 func makeField(value string, rules ...ward.Rule[string]) *ward.Field[string] {

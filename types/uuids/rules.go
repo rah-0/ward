@@ -8,7 +8,11 @@
 // with RuleIsValidV4 is encouraged for explicit intent.
 package uuids
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+
+	"github.com/rah-0/ward"
+)
 
 const (
 	IDIsValidV4  uint32 = 2
@@ -23,6 +27,11 @@ var IDs = map[uint32]string{
 	IDIsNotNilV4: "IsNotNilV4",
 	IDOneOfV4:    "OneOfV4",
 	IDNotOneOfV4: "NotOneOfV4",
+}
+
+// IDsAdd registers a custom rule name and returns its automatically assigned ID.
+func IDsAdd(name string) uint32 {
+	return ward.IDsAdd(IDs, name)
 }
 
 // -----------------------------------------------------------------------------

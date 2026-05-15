@@ -122,7 +122,16 @@ func GetValidationRules(w http.ResponseWriter, r *http.Request) {
 
 When a failure arrives at the frontend with `TypeID=2, RuleID=3`, it looks up TypeID 2 → strs, RuleID 3 → `LengthMin`, and can display the right message using `Arg1` as the actual minimum value. The frontend never hardcodes validation logic — it derives everything from what the backend exposes.
 
-Applications can also register custom rules by writing to the map before generating frontend constants:
+Applications can register custom rules in two ways:
+
+**Automatic ID assignment** — `IDsAdd` picks the next available ID, avoiding conflicts with built-in or future rules:
+
+```go
+idPasswordsMatch    := strs.IDsAdd("PasswordsMatch")
+idUsernameAvailable := strs.IDsAdd("UsernameAvailable")
+```
+
+**Manual ID assignment** — write directly to the map when you need a specific ID:
 
 ```go
 strs.IDs[1000] = "PasswordsMatch"

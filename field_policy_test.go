@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	ward "github.com/rah-0/ward"
+	"github.com/rah-0/ward"
 )
 
 func TestFieldPolicyValidate_RequiredAndOptional(t *testing.T) {

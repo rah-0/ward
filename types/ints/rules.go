@@ -1,6 +1,8 @@
 // Package ints provides int64 validation and sanitization rules for ward.
 package ints
 
+import "github.com/rah-0/ward"
+
 const (
 	IDGreaterThan        uint32 = 2
 	IDGreaterThanOrEqual uint32 = 3
@@ -42,6 +44,11 @@ var IDs = map[uint32]string{
 	IDClampMin:           "ClampMin",
 	IDClampMax:           "ClampMax",
 	IDAbs:                "Abs",
+}
+
+// IDsAdd registers a custom rule name and returns its automatically assigned ID.
+func IDsAdd(name string) uint32 {
+	return ward.IDsAdd(IDs, name)
 }
 
 // RuleGreaterThan passes when v > min.

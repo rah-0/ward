@@ -1,6 +1,6 @@
 package percentage
 
-import ward "github.com/rah-0/ward"
+import "github.com/rah-0/ward"
 
 const (
 	IDInRange    uint32 = 2
