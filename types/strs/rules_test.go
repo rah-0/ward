@@ -300,3 +300,272 @@ func TestNotOneOf(t *testing.T) {
 		t.Error("root is excluded, should fail")
 	}
 }
+
+func TestStartsWith(t *testing.T) {
+	if !run(strs.RuleStartsWith("foo"), "foobar") {
+		t.Error("foobar starts with foo, should pass")
+	}
+	if !run(strs.RuleStartsWith(""), "anything") {
+		t.Error("empty prefix should always pass")
+	}
+	if run(strs.RuleStartsWith("foo"), "barfoo") {
+		t.Error("barfoo does not start with foo, should fail")
+	}
+	if run(strs.RuleStartsWith("foo"), "") {
+		t.Error("empty string does not start with foo, should fail")
+	}
+}
+
+func TestEndsWith(t *testing.T) {
+	if !run(strs.RuleEndsWith("bar"), "foobar") {
+		t.Error("foobar ends with bar, should pass")
+	}
+	if !run(strs.RuleEndsWith(""), "anything") {
+		t.Error("empty suffix should always pass")
+	}
+	if run(strs.RuleEndsWith("bar"), "barfoo") {
+		t.Error("barfoo does not end with bar, should fail")
+	}
+	if run(strs.RuleEndsWith("bar"), "") {
+		t.Error("empty string does not end with bar, should fail")
+	}
+}
+
+func TestIsIP(t *testing.T) {
+	if !run(strs.RuleIsIP(), "192.168.1.1") {
+		t.Error("IPv4 should pass IsIP")
+	}
+	if !run(strs.RuleIsIP(), "::1") {
+		t.Error("IPv6 loopback should pass IsIP")
+	}
+	if !run(strs.RuleIsIP(), "2001:db8::1") {
+		t.Error("IPv6 should pass IsIP")
+	}
+	if run(strs.RuleIsIP(), "not-an-ip") {
+		t.Error("non-IP should fail")
+	}
+	if run(strs.RuleIsIP(), "999.999.999.999") {
+		t.Error("invalid octets should fail")
+	}
+	if run(strs.RuleIsIP(), "") {
+		t.Error("empty should fail")
+	}
+}
+
+func TestIsIPv4(t *testing.T) {
+	if !run(strs.RuleIsIPv4(), "192.168.1.1") {
+		t.Error("dotted-decimal IPv4 should pass")
+	}
+	if !run(strs.RuleIsIPv4(), "0.0.0.0") {
+		t.Error("0.0.0.0 should pass")
+	}
+	if run(strs.RuleIsIPv4(), "::1") {
+		t.Error("IPv6 should fail IsIPv4")
+	}
+	if run(strs.RuleIsIPv4(), "::ffff:1.2.3.4") {
+		t.Error("IPv4-mapped IPv6 should fail IsIPv4 (it contains ':')")
+	}
+	if run(strs.RuleIsIPv4(), "999.999.999.999") {
+		t.Error("invalid octets should fail")
+	}
+}
+
+func TestIsIPv6(t *testing.T) {
+	if !run(strs.RuleIsIPv6(), "::1") {
+		t.Error("IPv6 loopback should pass")
+	}
+	if !run(strs.RuleIsIPv6(), "2001:db8::1") {
+		t.Error("IPv6 should pass")
+	}
+	if !run(strs.RuleIsIPv6(), "::ffff:1.2.3.4") {
+		t.Error("IPv4-mapped IPv6 should pass IsIPv6")
+	}
+	if run(strs.RuleIsIPv6(), "192.168.1.1") {
+		t.Error("plain IPv4 should fail IsIPv6")
+	}
+	if run(strs.RuleIsIPv6(), "not-an-ip") {
+		t.Error("non-IP should fail")
+	}
+}
+
+func TestIsAlpha(t *testing.T) {
+	if !run(strs.RuleIsAlpha(), "Hello") {
+		t.Error("letters only should pass")
+	}
+	if run(strs.RuleIsAlpha(), "Hello123") {
+		t.Error("mixed letters and digits should fail")
+	}
+	if run(strs.RuleIsAlpha(), "Hello!") {
+		t.Error("letters with punctuation should fail")
+	}
+	if run(strs.RuleIsAlpha(), "") {
+		t.Error("empty string should fail")
+	}
+}
+
+func TestIsAlphaNumeric(t *testing.T) {
+	if !run(strs.RuleIsAlphaNumeric(), "Hello123") {
+		t.Error("letters and digits should pass")
+	}
+	if !run(strs.RuleIsAlphaNumeric(), "abc") {
+		t.Error("letters only should pass")
+	}
+	if !run(strs.RuleIsAlphaNumeric(), "123") {
+		t.Error("digits only should pass")
+	}
+	if run(strs.RuleIsAlphaNumeric(), "hello world") {
+		t.Error("space should fail")
+	}
+	if run(strs.RuleIsAlphaNumeric(), "abc!") {
+		t.Error("punctuation should fail")
+	}
+	if run(strs.RuleIsAlphaNumeric(), "") {
+		t.Error("empty string should fail")
+	}
+}
+
+func TestIsASCII(t *testing.T) {
+	if !run(strs.RuleIsASCII(), "Hello, world!") {
+		t.Error("plain ASCII should pass")
+	}
+	if !run(strs.RuleIsASCII(), "") {
+		t.Error("empty string should pass")
+	}
+	if !run(strs.RuleIsASCII(), "\x00\x7f") {
+		t.Error("0x00 and 0x7f boundary should pass")
+	}
+	if run(strs.RuleIsASCII(), "héllo") {
+		t.Error("non-ASCII letter should fail")
+	}
+	if run(strs.RuleIsASCII(), "日本語") {
+		t.Error("multi-byte chars should fail")
+	}
+}
+
+func TestIsBase64(t *testing.T) {
+	if !run(strs.RuleIsBase64(), "aGVsbG8=") {
+		t.Error("valid base64 should pass")
+	}
+	if !run(strs.RuleIsBase64(), "") {
+		t.Error("empty string is valid base64 (decodes to empty)")
+	}
+	if run(strs.RuleIsBase64(), "aGVsbG8") {
+		t.Error("base64 missing padding should fail std encoding")
+	}
+	if run(strs.RuleIsBase64(), "not base64!") {
+		t.Error("invalid base64 should fail")
+	}
+}
+
+func TestIsBase64URL(t *testing.T) {
+	if !run(strs.RuleIsBase64URL(), "aGVsbG8=") {
+		t.Error("valid URL-safe base64 should pass")
+	}
+	if !run(strs.RuleIsBase64URL(), "a-_b") {
+		// 4 chars, '-' and '_' are URL-safe variants of '+' and '/'
+		// "a-_b" -> 3 bytes, no padding needed (4 chars = 3 bytes)
+		t.Error("URL-safe characters should pass")
+	}
+	if run(strs.RuleIsBase64URL(), "a+/b=") {
+		t.Error("std base64 chars + and / should fail URL encoding")
+	}
+}
+
+func TestIsJSON(t *testing.T) {
+	for _, v := range []string{
+		`{"a":1}`,
+		`[1,2,3]`,
+		`"hello"`,
+		`123`,
+		`true`,
+		`false`,
+		`null`,
+	} {
+		if !run(strs.RuleIsJSON(), v) {
+			t.Errorf("%q should be valid JSON", v)
+		}
+	}
+	for _, v := range []string{
+		``,
+		`{`,
+		`{"a":}`,
+		`undefined`,
+		`{a:1}`,
+	} {
+		if run(strs.RuleIsJSON(), v) {
+			t.Errorf("%q should not be valid JSON", v)
+		}
+	}
+}
+
+func TestIsLowercase(t *testing.T) {
+	if !run(strs.RuleIsLowercase(), "hello") {
+		t.Error("all lowercase should pass")
+	}
+	if !run(strs.RuleIsLowercase(), "hello world 123!") {
+		t.Error("lowercase with non-letter chars should pass")
+	}
+	if !run(strs.RuleIsLowercase(), "") {
+		t.Error("empty string should pass")
+	}
+	if run(strs.RuleIsLowercase(), "Hello") {
+		t.Error("mixed case should fail")
+	}
+	if run(strs.RuleIsLowercase(), "HELLO") {
+		t.Error("uppercase should fail")
+	}
+}
+
+func TestIsUppercase(t *testing.T) {
+	if !run(strs.RuleIsUppercase(), "HELLO") {
+		t.Error("all uppercase should pass")
+	}
+	if !run(strs.RuleIsUppercase(), "HELLO WORLD 123!") {
+		t.Error("uppercase with non-letter chars should pass")
+	}
+	if !run(strs.RuleIsUppercase(), "") {
+		t.Error("empty string should pass")
+	}
+	if run(strs.RuleIsUppercase(), "Hello") {
+		t.Error("mixed case should fail")
+	}
+	if run(strs.RuleIsUppercase(), "hello") {
+		t.Error("lowercase should fail")
+	}
+}
+
+func TestToLower(t *testing.T) {
+	s := "Hello World"
+	strs.RuleToLower().Fn(&s)
+	if s != "hello world" {
+		t.Errorf("expected %q, got %q", "hello world", s)
+	}
+}
+
+func TestToUpper(t *testing.T) {
+	s := "Hello World"
+	strs.RuleToUpper().Fn(&s)
+	if s != "HELLO WORLD" {
+		t.Errorf("expected %q, got %q", "HELLO WORLD", s)
+	}
+}
+
+func TestStripHTMLTags(t *testing.T) {
+	s := "<p>hello <b>world</b></p>"
+	strs.RuleStripHTMLTags().Fn(&s)
+	if s != "hello world" {
+		t.Errorf("expected %q, got %q", "hello world", s)
+	}
+
+	s = "no tags here"
+	strs.RuleStripHTMLTags().Fn(&s)
+	if s != "no tags here" {
+		t.Errorf("plain text should be unchanged, got %q", s)
+	}
+
+	s = "<script>alert(1)</script>"
+	strs.RuleStripHTMLTags().Fn(&s)
+	if s != "alert(1)" {
+		t.Errorf("expected %q, got %q", "alert(1)", s)
+	}
+}

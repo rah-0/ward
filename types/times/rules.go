@@ -13,6 +13,10 @@ const (
 	IDIsNotZero     uint32 = 8
 	IDOneOf         uint32 = 9
 	IDNotOneOf      uint32 = 10
+	IDIsPast        uint32 = 11
+	IDIsFuture      uint32 = 12
+	IDIsWeekday     uint32 = 13
+	IDIsWeekend     uint32 = 14
 )
 
 // IDs lists all rule IDs in this package.
@@ -22,6 +26,8 @@ var IDs = []uint32{
 	IDInRange,
 	IDIsZero, IDIsNotZero,
 	IDOneOf, IDNotOneOf,
+	IDIsPast, IDIsFuture,
+	IDIsWeekday, IDIsWeekend,
 }
 
 // RuleAfter passes when v is strictly after threshold.
@@ -115,5 +121,49 @@ func RuleNotOneOf(excluded ...time.Time) Rule {
 			}
 		}
 		return nil
+	}}
+}
+
+// RuleIsPast passes when v is strictly before time.Now() at validation time.
+// Comparison is done with time.Now() so a fresh "now" is observed on each call;
+// the same field validated repeatedly may cross the boundary as wall time advances.
+func RuleIsPast() Rule {
+	return Rule{ID: IDIsPast, Fn: func(v *time.Time) *Result {
+		if v.Before(time.Now()) {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleIsFuture passes when v is strictly after time.Now() at validation time.
+func RuleIsFuture() Rule {
+	return Rule{ID: IDIsFuture, Fn: func(v *time.Time) *Result {
+		if v.After(time.Now()) {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleIsWeekday passes when v falls on Monday through Friday in its own location.
+func RuleIsWeekday() Rule {
+	return Rule{ID: IDIsWeekday, Fn: func(v *time.Time) *Result {
+		d := v.Weekday()
+		if d != time.Saturday && d != time.Sunday {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleIsWeekend passes when v falls on Saturday or Sunday in its own location.
+func RuleIsWeekend() Rule {
+	return Rule{ID: IDIsWeekend, Fn: func(v *time.Time) *Result {
+		d := v.Weekday()
+		if d == time.Saturday || d == time.Sunday {
+			return nil
+		}
+		return &Result{}
 	}}
 }

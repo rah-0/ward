@@ -77,15 +77,15 @@ func TestPositive(t *testing.T) {
 	}
 }
 
-func TestNonNegative(t *testing.T) {
-	if !run(floats.RuleNonNegative(), 0.0) {
-		t.Error("0.0 should be non-negative")
+func TestPositiveOrZero(t *testing.T) {
+	if !run(floats.RulePositiveOrZero(), 0.0) {
+		t.Error("0.0 should pass PositiveOrZero")
 	}
-	if !run(floats.RuleNonNegative(), 1.5) {
-		t.Error("1.5 should be non-negative")
+	if !run(floats.RulePositiveOrZero(), 1.5) {
+		t.Error("1.5 should pass PositiveOrZero")
 	}
-	if run(floats.RuleNonNegative(), -0.1) {
-		t.Error("-0.1 should fail non-negative")
+	if run(floats.RulePositiveOrZero(), -0.1) {
+		t.Error("-0.1 should fail PositiveOrZero")
 	}
 }
 
@@ -140,5 +140,192 @@ func TestNotOneOf(t *testing.T) {
 	}
 	if run(floats.RuleNotOneOf(1.0, 2.5), 1.0) {
 		t.Error("1.0 is excluded, should fail")
+	}
+}
+
+func TestNegative(t *testing.T) {
+	if !run(floats.RuleNegative(), -0.1) {
+		t.Error("-0.1 should be negative")
+	}
+	if run(floats.RuleNegative(), 0.0) {
+		t.Error("0.0 should not be negative")
+	}
+	if run(floats.RuleNegative(), 1.0) {
+		t.Error("1.0 should not be negative")
+	}
+}
+
+func TestNegativeOrZero(t *testing.T) {
+	if !run(floats.RuleNegativeOrZero(), 0.0) {
+		t.Error("0.0 should pass NegativeOrZero")
+	}
+	if !run(floats.RuleNegativeOrZero(), -0.5) {
+		t.Error("-0.5 should pass NegativeOrZero")
+	}
+	if run(floats.RuleNegativeOrZero(), 0.001) {
+		t.Error("0.001 should fail NegativeOrZero")
+	}
+}
+
+func TestIsInteger(t *testing.T) {
+	for _, v := range []float64{0.0, 1.0, -1.0, 100.0, -100.0} {
+		if !run(floats.RuleIsInteger(), v) {
+			t.Errorf("%v should be integer-valued", v)
+		}
+	}
+	for _, v := range []float64{0.5, -0.5, 1.1, 3.14} {
+		if run(floats.RuleIsInteger(), v) {
+			t.Errorf("%v should not be integer-valued", v)
+		}
+	}
+	if run(floats.RuleIsInteger(), math.NaN()) {
+		t.Error("NaN should fail IsInteger")
+	}
+	if run(floats.RuleIsInteger(), math.Inf(1)) {
+		t.Error("+Inf should fail IsInteger")
+	}
+}
+
+func TestIsNaN(t *testing.T) {
+	if !run(floats.RuleIsNaN(), math.NaN()) {
+		t.Error("NaN should pass IsNaN")
+	}
+	if run(floats.RuleIsNaN(), 0.0) {
+		t.Error("0.0 should fail IsNaN")
+	}
+	if run(floats.RuleIsNaN(), math.Inf(1)) {
+		t.Error("+Inf should fail IsNaN")
+	}
+}
+
+func TestIsInf(t *testing.T) {
+	if !run(floats.RuleIsInf(), math.Inf(1)) {
+		t.Error("+Inf should pass IsInf")
+	}
+	if !run(floats.RuleIsInf(), math.Inf(-1)) {
+		t.Error("-Inf should pass IsInf")
+	}
+	if run(floats.RuleIsInf(), 0.0) {
+		t.Error("0.0 should fail IsInf")
+	}
+	if run(floats.RuleIsInf(), math.NaN()) {
+		t.Error("NaN should fail IsInf")
+	}
+}
+
+func TestRound(t *testing.T) {
+	v := 1.23456
+	floats.RuleRound(2).Fn(&v)
+	if v != 1.23 {
+		t.Errorf("expected 1.23, got %v", v)
+	}
+
+	v = 1.5
+	floats.RuleRound(0).Fn(&v)
+	if v != 2.0 {
+		t.Errorf("expected 2.0 (half-away-from-zero), got %v", v)
+	}
+
+	v = -1.5
+	floats.RuleRound(0).Fn(&v)
+	if v != -2.0 {
+		t.Errorf("expected -2.0 (half-away-from-zero), got %v", v)
+	}
+
+	// negative n treated as 0
+	v = 3.7
+	floats.RuleRound(-1).Fn(&v)
+	if v != 4.0 {
+		t.Errorf("expected 4.0, got %v", v)
+	}
+
+	// NaN/Inf unchanged
+	v = math.NaN()
+	floats.RuleRound(2).Fn(&v)
+	if !math.IsNaN(v) {
+		t.Error("NaN should be left unchanged")
+	}
+	v = math.Inf(1)
+	floats.RuleRound(2).Fn(&v)
+	if !math.IsInf(v, 1) {
+		t.Error("+Inf should be left unchanged")
+	}
+}
+
+func TestFloor(t *testing.T) {
+	v := 1.7
+	floats.RuleFloor().Fn(&v)
+	if v != 1.0 {
+		t.Errorf("expected 1.0, got %v", v)
+	}
+	v = -1.2
+	floats.RuleFloor().Fn(&v)
+	if v != -2.0 {
+		t.Errorf("expected -2.0, got %v", v)
+	}
+}
+
+func TestCeil(t *testing.T) {
+	v := 1.2
+	floats.RuleCeil().Fn(&v)
+	if v != 2.0 {
+		t.Errorf("expected 2.0, got %v", v)
+	}
+	v = -1.7
+	floats.RuleCeil().Fn(&v)
+	if v != -1.0 {
+		t.Errorf("expected -1.0, got %v", v)
+	}
+}
+
+func TestClamp(t *testing.T) {
+	v := 0.5
+	floats.RuleClamp(0.0, 1.0).Fn(&v)
+	if v != 0.5 {
+		t.Errorf("in-range should be unchanged, got %v", v)
+	}
+
+	v = -0.5
+	floats.RuleClamp(0.0, 1.0).Fn(&v)
+	if v != 0.0 {
+		t.Errorf("below min should clamp to 0.0, got %v", v)
+	}
+
+	v = 2.0
+	floats.RuleClamp(0.0, 1.0).Fn(&v)
+	if v != 1.0 {
+		t.Errorf("above max should clamp to 1.0, got %v", v)
+	}
+
+	// invalid range no-op
+	v = 5.0
+	floats.RuleClamp(10.0, 1.0).Fn(&v)
+	if v != 5.0 {
+		t.Errorf("invalid range should be a no-op, got %v", v)
+	}
+
+	// NaN unchanged
+	v = math.NaN()
+	floats.RuleClamp(0.0, 1.0).Fn(&v)
+	if !math.IsNaN(v) {
+		t.Error("NaN should be left unchanged")
+	}
+}
+
+func TestAbs(t *testing.T) {
+	v := -3.5
+	floats.RuleAbs().Fn(&v)
+	if v != 3.5 {
+		t.Errorf("expected 3.5, got %v", v)
+	}
+	v = 3.5
+	floats.RuleAbs().Fn(&v)
+	if v != 3.5 {
+		t.Errorf("positive unchanged, got %v", v)
+	}
+	v = 0.0
+	floats.RuleAbs().Fn(&v)
+	if v != 0.0 {
+		t.Errorf("zero unchanged, got %v", v)
 	}
 }

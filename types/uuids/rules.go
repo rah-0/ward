@@ -1,35 +1,94 @@
 // Package uuids provides UUID validation rules for ward.
-// The underlying type is string. A UUID is represented as a
-// hyphenated hex string: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.
+// The underlying type is string. UUIDs are parsed and inspected using
+// github.com/google/uuid; no regex is involved.
+//
+// Rules in this package are version-tagged. Each version-specific rule
+// fully asserts the relevant UUID version, so callers can chain them
+// without relying on a separate "is valid" precursor — though composing
+// with RuleIsValidV4 is encouraged for explicit intent.
 package uuids
 
+import "github.com/google/uuid"
+
 const (
-	IDIsValid  uint32 = 2
-	IDOneOf    uint32 = 3
-	IDNotOneOf uint32 = 4
+	IDIsValidV4   uint32 = 2
+	IDIsNotNilV4  uint32 = 3
+	IDOneOfV4     uint32 = 4
+	IDNotOneOfV4  uint32 = 5
 )
 
-// IDs lists all rule IDs in this package.
-var IDs = []uint32{
-	IDIsValid,
-	IDOneOf, IDNotOneOf,
+// IDsV4 lists the rule IDs that validate UUIDv4 values.
+var IDsV4 = []uint32{
+	IDIsValidV4,
+	IDIsNotNilV4,
+	IDOneOfV4, IDNotOneOfV4,
 }
 
-// RuleIsValid passes when *s is a valid UUID string.
-func RuleIsValid() Rule {
-	return Rule{ID: IDIsValid, Fn: func(s *string) *Result {
-		if RegexpUUID.MatchString(*s) {
-			return nil
+// IDs is the union of every rule ID exposed by this package, across all
+// UUID versions. Frontends can iterate it to enumerate available rules.
+var IDs = IDsV4
+
+// -----------------------------------------------------------------------------
+// UUIDv4
+// -----------------------------------------------------------------------------
+
+// RuleIsValidV4 passes when *s parses as a UUID and its version is 4.
+// The nil UUID has version 0 and fails this rule.
+//
+// Parsing is delegated to uuid.Parse, which accepts the canonical hyphenated
+// form as well as raw hex (no hyphens), the urn:uuid: prefix, and Microsoft-
+// style braces. Callers that require strictly canonical input must add their
+// own format check.
+func RuleIsValidV4() Rule {
+	return Rule{ID: IDIsValidV4, Fn: func(s *string) *Result {
+		id, err := uuid.Parse(*s)
+		if err != nil {
+			return &Result{Err: err}
 		}
-		return &Result{}
+		if id.Version() != 4 {
+			return &Result{}
+		}
+		return nil
 	}}
 }
 
-// RuleOneOf passes when *s equals one of the allowed UUIDs.
-func RuleOneOf(allowed ...string) Rule {
-	return Rule{ID: IDOneOf, Fn: func(s *string) *Result {
-		for _, a := range allowed {
-			if *s == a {
+// RuleIsNotNilV4 passes when *s parses as a UUIDv4 and is not the nil UUID.
+// Because the nil UUID is version 0, requiring V4 already excludes it; this
+// rule is provided for explicit composition where the intent is to spell
+// out "must not be nil" alongside other V4 checks.
+func RuleIsNotNilV4() Rule {
+	return Rule{ID: IDIsNotNilV4, Fn: func(s *string) *Result {
+		id, err := uuid.Parse(*s)
+		if err != nil {
+			return &Result{Err: err}
+		}
+		if id == uuid.Nil {
+			return &Result{}
+		}
+		if id.Version() != 4 {
+			return &Result{}
+		}
+		return nil
+	}}
+}
+
+// RuleOneOfV4 passes when *s parses as a UUIDv4 and equals one of the
+// allowed values. Allowed UUIDs are parsed once at rule construction;
+// any entry that is not a valid UUID is silently skipped, so it can
+// never match an input. Comparison is canonical (case-insensitive,
+// formatting-tolerant) thanks to uuid.Parse.
+func RuleOneOfV4(allowed ...string) Rule {
+	parsed := parseUUIDsV4(allowed)
+	return Rule{ID: IDOneOfV4, Fn: func(s *string) *Result {
+		id, err := uuid.Parse(*s)
+		if err != nil {
+			return &Result{Err: err, Arg1: allowed}
+		}
+		if id.Version() != 4 {
+			return &Result{Arg1: allowed}
+		}
+		for _, a := range parsed {
+			if id == a {
 				return nil
 			}
 		}
@@ -37,14 +96,39 @@ func RuleOneOf(allowed ...string) Rule {
 	}}
 }
 
-// RuleNotOneOf passes when *s does not equal any of the excluded UUIDs.
-func RuleNotOneOf(excluded ...string) Rule {
-	return Rule{ID: IDNotOneOf, Fn: func(s *string) *Result {
-		for _, e := range excluded {
-			if *s == e {
+// RuleNotOneOfV4 passes when *s parses as a UUIDv4 and is not equal to
+// any of the excluded values. Excluded UUIDs are parsed once at rule
+// construction; invalid entries are silently dropped.
+func RuleNotOneOfV4(excluded ...string) Rule {
+	parsed := parseUUIDsV4(excluded)
+	return Rule{ID: IDNotOneOfV4, Fn: func(s *string) *Result {
+		id, err := uuid.Parse(*s)
+		if err != nil {
+			return &Result{Err: err}
+		}
+		if id.Version() != 4 {
+			return &Result{}
+		}
+		for _, e := range parsed {
+			if id == e {
 				return &Result{Arg1: excluded}
 			}
 		}
 		return nil
 	}}
+}
+
+// parseUUIDsV4 parses a slice of UUID strings, keeping only those that
+// successfully parse and are version 4. Used at rule construction time
+// so the per-call hot path only parses the input once.
+func parseUUIDsV4(ss []string) []uuid.UUID {
+	out := make([]uuid.UUID, 0, len(ss))
+	for _, s := range ss {
+		id, err := uuid.Parse(s)
+		if err != nil || id.Version() != 4 {
+			continue
+		}
+		out = append(out, id)
+	}
+	return out
 }

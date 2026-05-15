@@ -89,15 +89,15 @@ func TestPositive(t *testing.T) {
 	}
 }
 
-func TestNonNegative(t *testing.T) {
-	if !run(durations.RuleNonNegative(), 0) {
-		t.Error("0 should be non-negative")
+func TestPositiveOrZero(t *testing.T) {
+	if !run(durations.RulePositiveOrZero(), 0) {
+		t.Error("0 should pass PositiveOrZero")
 	}
-	if !run(durations.RuleNonNegative(), time.Second) {
-		t.Error("1s should be non-negative")
+	if !run(durations.RulePositiveOrZero(), time.Second) {
+		t.Error("1s should pass PositiveOrZero")
 	}
-	if run(durations.RuleNonNegative(), -time.Second) {
-		t.Error("negative duration should fail non-negative")
+	if run(durations.RulePositiveOrZero(), -time.Second) {
+		t.Error("negative duration should fail PositiveOrZero")
 	}
 }
 

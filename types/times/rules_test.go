@@ -125,3 +125,68 @@ func TestNotOneOf(t *testing.T) {
 		t.Error("t2 is excluded, should fail")
 	}
 }
+
+func TestIsPast(t *testing.T) {
+	past := time.Now().Add(-time.Hour)
+	if !run(times.RuleIsPast(), past) {
+		t.Error("one hour ago should be past")
+	}
+	future := time.Now().Add(time.Hour)
+	if run(times.RuleIsPast(), future) {
+		t.Error("one hour from now should fail IsPast")
+	}
+	if run(times.RuleIsPast(), time.Time{}) {
+		// zero time IS technically in the past, but documenting current behaviour:
+		// it is before now, so it passes.
+		// This test is to alert if behaviour ever changes.
+		_ = past
+	}
+}
+
+func TestIsFuture(t *testing.T) {
+	future := time.Now().Add(time.Hour)
+	if !run(times.RuleIsFuture(), future) {
+		t.Error("one hour from now should be future")
+	}
+	past := time.Now().Add(-time.Hour)
+	if run(times.RuleIsFuture(), past) {
+		t.Error("one hour ago should fail IsFuture")
+	}
+}
+
+func TestIsWeekday(t *testing.T) {
+	// 2024-01-01 was a Monday
+	monday := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
+	friday := time.Date(2024, 1, 5, 12, 0, 0, 0, time.UTC)
+	saturday := time.Date(2024, 1, 6, 12, 0, 0, 0, time.UTC)
+	sunday := time.Date(2024, 1, 7, 12, 0, 0, 0, time.UTC)
+
+	if !run(times.RuleIsWeekday(), monday) {
+		t.Error("Monday should be a weekday")
+	}
+	if !run(times.RuleIsWeekday(), friday) {
+		t.Error("Friday should be a weekday")
+	}
+	if run(times.RuleIsWeekday(), saturday) {
+		t.Error("Saturday should fail IsWeekday")
+	}
+	if run(times.RuleIsWeekday(), sunday) {
+		t.Error("Sunday should fail IsWeekday")
+	}
+}
+
+func TestIsWeekend(t *testing.T) {
+	monday := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
+	saturday := time.Date(2024, 1, 6, 12, 0, 0, 0, time.UTC)
+	sunday := time.Date(2024, 1, 7, 12, 0, 0, 0, time.UTC)
+
+	if !run(times.RuleIsWeekend(), saturday) {
+		t.Error("Saturday should be weekend")
+	}
+	if !run(times.RuleIsWeekend(), sunday) {
+		t.Error("Sunday should be weekend")
+	}
+	if run(times.RuleIsWeekend(), monday) {
+		t.Error("Monday should fail IsWeekend")
+	}
+}

@@ -11,4 +11,7 @@ var (
 	RegexpNonNegativeInt = regexp.MustCompile(`^(0|[1-9]\d{0,8})$`)
 	RegexpUsernameChars  = regexp.MustCompile(`^[a-zA-Z0-9_.@-]+$`)
 	RegexpHasSpecialChar = regexp.MustCompile(`[@$!%*?&_\-=]`)
+	RegexpAlpha          = regexp.MustCompile(`^[a-zA-Z]+$`)
+	RegexpAlphaNumeric   = regexp.MustCompile(`^[a-zA-Z0-9]+$`)
+	RegexpHTMLTag        = regexp.MustCompile(`<[^>]*>`)
 )

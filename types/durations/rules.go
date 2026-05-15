@@ -10,7 +10,7 @@ const (
 	IDLessThanOrEqual    uint32 = 5
 	IDInRange            uint32 = 6
 	IDPositive           uint32 = 7
-	IDNonNegative        uint32 = 8
+	IDPositiveOrZero     uint32 = 8
 	IDOneOf              uint32 = 9
 	IDNotOneOf           uint32 = 10
 )
@@ -20,7 +20,7 @@ var IDs = []uint32{
 	IDGreaterThan, IDGreaterThanOrEqual,
 	IDLessThan, IDLessThanOrEqual,
 	IDInRange,
-	IDPositive, IDNonNegative,
+	IDPositive, IDPositiveOrZero,
 	IDOneOf, IDNotOneOf,
 }
 
@@ -84,9 +84,9 @@ func RulePositive() Rule {
 	}}
 }
 
-// RuleNonNegative passes when v >= 0.
-func RuleNonNegative() Rule {
-	return Rule{ID: IDNonNegative, Fn: func(v *time.Duration) *Result {
+// RulePositiveOrZero passes when v >= 0.
+func RulePositiveOrZero() Rule {
+	return Rule{ID: IDPositiveOrZero, Fn: func(v *time.Duration) *Result {
 		if *v >= 0 {
 			return nil
 		}

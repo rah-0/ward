@@ -1,4 +1,4 @@
-// Package ints provides int64 validation rules for ward.
+// Package ints provides int64 validation and sanitization rules for ward.
 package ints
 
 const (
@@ -8,10 +8,18 @@ const (
 	IDLessThanOrEqual    uint32 = 5
 	IDInRange            uint32 = 6
 	IDPositive           uint32 = 7
-	IDNonNegative        uint32 = 8
+	IDPositiveOrZero     uint32 = 8
 	IDMultipleOf         uint32 = 9
 	IDOneOf              uint32 = 10
 	IDNotOneOf           uint32 = 11
+	IDNegative           uint32 = 12
+	IDNegativeOrZero     uint32 = 13
+	IDIsEven             uint32 = 14
+	IDIsOdd              uint32 = 15
+	IDClamp              uint32 = 16
+	IDClampMin           uint32 = 17
+	IDClampMax           uint32 = 18
+	IDAbs                uint32 = 19
 )
 
 // IDs lists all rule IDs in this package.
@@ -19,9 +27,12 @@ var IDs = []uint32{
 	IDGreaterThan, IDGreaterThanOrEqual,
 	IDLessThan, IDLessThanOrEqual,
 	IDInRange,
-	IDPositive, IDNonNegative,
+	IDPositive, IDPositiveOrZero,
 	IDMultipleOf,
 	IDOneOf, IDNotOneOf,
+	IDNegative, IDNegativeOrZero,
+	IDIsEven, IDIsOdd,
+	IDClamp, IDClampMin, IDClampMax, IDAbs,
 }
 
 // RuleGreaterThan passes when v > min.
@@ -84,9 +95,9 @@ func RulePositive() Rule {
 	}}
 }
 
-// RuleNonNegative passes when v >= 0.
-func RuleNonNegative() Rule {
-	return Rule{ID: IDNonNegative, Fn: func(v *int64) *Result {
+// RulePositiveOrZero passes when v >= 0.
+func RulePositiveOrZero() Rule {
+	return Rule{ID: IDPositiveOrZero, Fn: func(v *int64) *Result {
 		if *v >= 0 {
 			return nil
 		}
@@ -123,6 +134,97 @@ func RuleNotOneOf(excluded ...int64) Rule {
 			if *v == e {
 				return &Result{Arg1: excluded}
 			}
+		}
+		return nil
+	}}
+}
+
+// RuleNegative passes when v < 0.
+func RuleNegative() Rule {
+	return Rule{ID: IDNegative, Fn: func(v *int64) *Result {
+		if *v < 0 {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleNegativeOrZero passes when v <= 0.
+func RuleNegativeOrZero() Rule {
+	return Rule{ID: IDNegativeOrZero, Fn: func(v *int64) *Result {
+		if *v <= 0 {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleIsEven passes when v is even (divisible by 2, including 0 and negatives).
+func RuleIsEven() Rule {
+	return Rule{ID: IDIsEven, Fn: func(v *int64) *Result {
+		if *v%2 == 0 {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleIsOdd passes when v is odd.
+func RuleIsOdd() Rule {
+	return Rule{ID: IDIsOdd, Fn: func(v *int64) *Result {
+		if *v%2 != 0 {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// -----------------------------------------------------------------------------
+// Sanitizers — the following rules mutate *v
+// -----------------------------------------------------------------------------
+
+// RuleClamp is a sanitizer that clamps *v into the inclusive range [min, max].
+// If min > max, the rule is a no-op to avoid producing nonsensical results.
+func RuleClamp(min, max int64) Rule {
+	return Rule{ID: IDClamp, Fn: func(v *int64) *Result {
+		if min > max {
+			return nil
+		}
+		if *v < min {
+			*v = min
+		} else if *v > max {
+			*v = max
+		}
+		return nil
+	}}
+}
+
+// RuleClampMin is a sanitizer that raises *v to min if it is below.
+func RuleClampMin(min int64) Rule {
+	return Rule{ID: IDClampMin, Fn: func(v *int64) *Result {
+		if *v < min {
+			*v = min
+		}
+		return nil
+	}}
+}
+
+// RuleClampMax is a sanitizer that lowers *v to max if it is above.
+func RuleClampMax(max int64) Rule {
+	return Rule{ID: IDClampMax, Fn: func(v *int64) *Result {
+		if *v > max {
+			*v = max
+		}
+		return nil
+	}}
+}
+
+// RuleAbs is a sanitizer that replaces *v with its absolute value.
+// math.MinInt64 has no positive counterpart and is left unchanged.
+func RuleAbs() Rule {
+	return Rule{ID: IDAbs, Fn: func(v *int64) *Result {
+		if *v < 0 && *v != -1<<63 {
+			*v = -*v
 		}
 		return nil
 	}}

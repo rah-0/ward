@@ -2,7 +2,10 @@
 package strs
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"html"
+	"net"
 	"net/mail"
 	"net/url"
 	"regexp"
@@ -38,6 +41,22 @@ const (
 	IDNormalizeEmail   uint32 = 26
 	IDOneOf            uint32 = 27
 	IDNotOneOf         uint32 = 28
+	IDStartsWith       uint32 = 29
+	IDEndsWith         uint32 = 30
+	IDIsIP             uint32 = 31
+	IDIsIPv4           uint32 = 32
+	IDIsIPv6           uint32 = 33
+	IDIsAlpha          uint32 = 34
+	IDIsAlphaNumeric   uint32 = 35
+	IDIsASCII          uint32 = 36
+	IDIsBase64         uint32 = 37
+	IDIsBase64URL      uint32 = 38
+	IDIsJSON           uint32 = 39
+	IDIsLowercase      uint32 = 40
+	IDIsUppercase      uint32 = 41
+	IDToLower          uint32 = 42
+	IDToUpper          uint32 = 43
+	IDStripHTMLTags    uint32 = 44
 )
 
 // IDs lists all rule IDs in this package. Use this to enumerate available
@@ -54,6 +73,13 @@ var IDs = []uint32{
 	IDTrim, IDEscapeHTML, IDUnescapeURL,
 	IDNormalizeEmail,
 	IDOneOf, IDNotOneOf,
+	IDStartsWith, IDEndsWith,
+	IDIsIP, IDIsIPv4, IDIsIPv6,
+	IDIsAlpha, IDIsAlphaNumeric, IDIsASCII,
+	IDIsBase64, IDIsBase64URL,
+	IDIsJSON,
+	IDIsLowercase, IDIsUppercase,
+	IDToLower, IDToUpper, IDStripHTMLTags,
 }
 
 func RuleNotEmpty() Rule {
@@ -341,6 +367,179 @@ func RuleNotOneOf(excluded ...string) Rule {
 				return &Result{Arg1: excluded}
 			}
 		}
+		return nil
+	}}
+}
+
+// RuleStartsWith passes when *s begins with prefix.
+func RuleStartsWith(prefix string) Rule {
+	return Rule{ID: IDStartsWith, Fn: func(s *string) *Result {
+		if strings.HasPrefix(*s, prefix) {
+			return nil
+		}
+		return &Result{Arg1: prefix}
+	}}
+}
+
+// RuleEndsWith passes when *s ends with suffix.
+func RuleEndsWith(suffix string) Rule {
+	return Rule{ID: IDEndsWith, Fn: func(s *string) *Result {
+		if strings.HasSuffix(*s, suffix) {
+			return nil
+		}
+		return &Result{Arg1: suffix}
+	}}
+}
+
+// RuleIsIP passes when *s parses as either an IPv4 or IPv6 address.
+func RuleIsIP() Rule {
+	return Rule{ID: IDIsIP, Fn: func(s *string) *Result {
+		if net.ParseIP(*s) != nil {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleIsIPv4 passes when *s is a dotted-decimal IPv4 address.
+// The input form must contain a "." and no ":", so IPv4-mapped IPv6
+// addresses (e.g. "::ffff:1.2.3.4") are rejected here and accepted by
+// RuleIsIPv6 instead.
+func RuleIsIPv4() Rule {
+	return Rule{ID: IDIsIPv4, Fn: func(s *string) *Result {
+		if net.ParseIP(*s) != nil && strings.Contains(*s, ".") && !strings.Contains(*s, ":") {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleIsIPv6 passes when *s is an IPv6 address (any form containing ":").
+// IPv4-mapped IPv6 addresses such as "::ffff:1.2.3.4" pass here.
+func RuleIsIPv6() Rule {
+	return Rule{ID: IDIsIPv6, Fn: func(s *string) *Result {
+		if net.ParseIP(*s) != nil && strings.Contains(*s, ":") {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleIsAlpha passes when *s contains only ASCII letters (a-z, A-Z) and is non-empty.
+func RuleIsAlpha() Rule {
+	return Rule{ID: IDIsAlpha, Fn: func(s *string) *Result {
+		if RegexpAlpha.MatchString(*s) {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleIsAlphaNumeric passes when *s contains only ASCII letters and digits and is non-empty.
+func RuleIsAlphaNumeric() Rule {
+	return Rule{ID: IDIsAlphaNumeric, Fn: func(s *string) *Result {
+		if RegexpAlphaNumeric.MatchString(*s) {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleIsASCII passes when every byte of *s is in the 7-bit ASCII range (0-127).
+// The empty string passes trivially.
+func RuleIsASCII() Rule {
+	return Rule{ID: IDIsASCII, Fn: func(s *string) *Result {
+		for i := 0; i < len(*s); i++ {
+			if (*s)[i] > 127 {
+				return &Result{}
+			}
+		}
+		return nil
+	}}
+}
+
+// RuleIsBase64 passes when *s is valid standard base64 (with padding).
+func RuleIsBase64() Rule {
+	return Rule{ID: IDIsBase64, Fn: func(s *string) *Result {
+		if _, err := base64.StdEncoding.DecodeString(*s); err == nil {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleIsBase64URL passes when *s is valid URL-safe base64 (with padding).
+func RuleIsBase64URL() Rule {
+	return Rule{ID: IDIsBase64URL, Fn: func(s *string) *Result {
+		if _, err := base64.URLEncoding.DecodeString(*s); err == nil {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleIsJSON passes when *s is a syntactically valid JSON value
+// (object, array, string, number, true, false, or null).
+func RuleIsJSON() Rule {
+	return Rule{ID: IDIsJSON, Fn: func(s *string) *Result {
+		if json.Valid([]byte(*s)) {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleIsLowercase passes when *s is unchanged by strings.ToLower.
+// Characters without case (digits, punctuation, spaces) do not cause failure.
+// The empty string passes.
+func RuleIsLowercase() Rule {
+	return Rule{ID: IDIsLowercase, Fn: func(s *string) *Result {
+		if strings.ToLower(*s) == *s {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleIsUppercase passes when *s is unchanged by strings.ToUpper.
+// Characters without case (digits, punctuation, spaces) do not cause failure.
+// The empty string passes.
+func RuleIsUppercase() Rule {
+	return Rule{ID: IDIsUppercase, Fn: func(s *string) *Result {
+		if strings.ToUpper(*s) == *s {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// -----------------------------------------------------------------------------
+// Sanitizers — the following rules mutate *s
+// -----------------------------------------------------------------------------
+
+// RuleToLower is a sanitizer that lowercases *s.
+func RuleToLower() Rule {
+	return Rule{ID: IDToLower, Fn: func(s *string) *Result {
+		*s = strings.ToLower(*s)
+		return nil
+	}}
+}
+
+// RuleToUpper is a sanitizer that uppercases *s.
+func RuleToUpper() Rule {
+	return Rule{ID: IDToUpper, Fn: func(s *string) *Result {
+		*s = strings.ToUpper(*s)
+		return nil
+	}}
+}
+
+// RuleStripHTMLTags is a sanitizer that removes anything matching <...> from *s.
+// This is not a security feature — use RuleEscapeHTML for output-escaping.
+// It is intended for simple content cleanup (e.g. stripping markup from a
+// pasted snippet) and does not attempt full HTML parsing.
+func RuleStripHTMLTags() Rule {
+	return Rule{ID: IDStripHTMLTags, Fn: func(s *string) *Result {
+		*s = RegexpHTMLTag.ReplaceAllString(*s, "")
 		return nil
 	}}
 }
