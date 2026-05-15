@@ -14,4 +14,5 @@ var (
 	RegexpAlpha          = regexp.MustCompile(`^[a-zA-Z]+$`)
 	RegexpAlphaNumeric   = regexp.MustCompile(`^[a-zA-Z0-9]+$`)
 	RegexpHTMLTag        = regexp.MustCompile(`<[^>]*>`)
+	RegexpUUID           = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 )

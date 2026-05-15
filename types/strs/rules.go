@@ -59,6 +59,7 @@ const (
 	IDToLower          uint32 = 42
 	IDToUpper          uint32 = 43
 	IDStripHTMLTags    uint32 = 44
+	IDIsUUID           uint32 = 45
 )
 
 // IDs maps every rule ID in this package to its name.
@@ -106,6 +107,7 @@ var IDs = map[uint32]string{
 	IDToLower:          "ToLower",
 	IDToUpper:          "ToUpper",
 	IDStripHTMLTags:    "StripHTMLTags",
+	IDIsUUID:           "IsUUID",
 }
 
 // IDsAdd registers a custom rule name and returns its automatically assigned ID.
@@ -571,6 +573,19 @@ func RuleToUpper() Rule {
 func RuleStripHTMLTags() Rule {
 	return Rule{TypeID: TypeID, ID: IDStripHTMLTags, Fn: func(s *string) *Result {
 		*s = RegexpHTMLTag.ReplaceAllString(*s, "")
+		return nil
+	}}
+}
+
+// RuleIsUUID passes when *s matches the canonical UUID format
+// (8-4-4-4-12 hex digits with hyphens). It does not enforce a specific
+// UUID version — any version (1–5) and the nil UUID all pass as long as
+// the format is correct.
+func RuleIsUUID() Rule {
+	return Rule{TypeID: TypeID, ID: IDIsUUID, Fn: func(s *string) *Result {
+		if !RegexpUUID.MatchString(*s) {
+			return &Result{}
+		}
 		return nil
 	}}
 }
