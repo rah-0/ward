@@ -156,6 +156,8 @@ fieldEmail.Policy.StopOnFail = true
 
 `ward.Rule[T]` and `ward.Field[T]` are generic over any type `T` — a struct, a primitive, a type alias. Implementing a custom type package requires only a TypeID, two type aliases, and a `New()` function.
 
+Every rule must set `TypeID` to its owning package's constant. `Validate()` reads `TypeID` from the rule, not the field — this ensures rules carry their identity correctly even when mixed across type packages that share the same underlying Go type.
+
 See [`examples/`](examples/) for the full implementation guide and the following working examples:
 
 | Example | T | Demonstrates |

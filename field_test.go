@@ -9,8 +9,8 @@ import (
 const testTypeID uint32 = 99
 
 var (
-	passingRule = ward.Rule[string]{ID: 1, Fn: func(s *string) *ward.Result { return nil }}
-	failingRule = ward.Rule[string]{ID: 2, Fn: func(s *string) *ward.Result { return &ward.Result{Arg1: *s} }}
+	passingRule = ward.Rule[string]{TypeID: testTypeID, ID: 1, Fn: func(s *string) *ward.Result { return nil }}
+	failingRule = ward.Rule[string]{TypeID: testTypeID, ID: 2, Fn: func(s *string) *ward.Result { return &ward.Result{Arg1: *s} }}
 )
 
 func newStringField(name string, value string, rules ...ward.Rule[string]) *ward.Field[string] {

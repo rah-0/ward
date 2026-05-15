@@ -1,7 +1,9 @@
 package ward
 
 // Field holds a pointer to the value being validated, its rules, and its policy.
-// TypeID is stamped in by each type package's New() function.
+// TypeID identifies which type package created the field; it is set by each
+// package's New() function and can be read for informational purposes, but
+// Validate() reads the TypeID from each Rule, not from the Field.
 // Sanitizers mutate *Value in place — callers that need to preserve the original
 // should copy it before calling Run().
 type Field[T any] struct {
@@ -30,7 +32,7 @@ func (f *Field[T]) Validate() []*Result {
 		if res == nil {
 			continue
 		}
-		res.TypeID = f.TypeID
+		res.TypeID = r.TypeID
 		res.RuleID = r.ID
 		res.FieldName = f.Name
 		results = append(results, res)

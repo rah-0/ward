@@ -1,11 +1,15 @@
 package ward
 
-// Rule associates a rule ID with its validation function for a given value type T.
+// Rule associates a type-package ID and rule ID with its validation function.
+// TypeID must be set to the owning package's TypeID constant — it is stamped
+// into every Result the rule produces, so the caller (and the frontend) can
+// identify which type package the failure belongs to.
 // Fn receives a pointer to the value so sanitizers can mutate it in place.
 // Fn returns nil on pass and a non-nil Result only on failure.
 type Rule[T any] struct {
-	ID uint32
-	Fn func(*T) *Result
+	TypeID uint32
+	ID     uint32
+	Fn     func(*T) *Result
 }
 
 // IDsAdd registers a custom rule name into ids and returns its automatically

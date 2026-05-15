@@ -114,7 +114,7 @@ func IDsAdd(name string) uint32 {
 }
 
 func RuleNotEmpty() Rule {
-	return Rule{ID: IDNotEmpty, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDNotEmpty, Fn: func(s *string) *Result {
 		if utf8.RuneCountInString(*s) > 0 {
 			return nil
 		}
@@ -123,7 +123,7 @@ func RuleNotEmpty() Rule {
 }
 
 func RuleLengthMin(min int) Rule {
-	return Rule{ID: IDLengthMin, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDLengthMin, Fn: func(s *string) *Result {
 		if utf8.RuneCountInString(*s) >= min {
 			return nil
 		}
@@ -134,7 +134,7 @@ func RuleLengthMin(min int) Rule {
 }
 
 func RuleLengthMax(max int) Rule {
-	return Rule{ID: IDLengthMax, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDLengthMax, Fn: func(s *string) *Result {
 		if utf8.RuneCountInString(*s) <= max {
 			return nil
 		}
@@ -145,7 +145,7 @@ func RuleLengthMax(max int) Rule {
 }
 
 func RuleLengthExact(length int) Rule {
-	return Rule{ID: IDLengthExact, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDLengthExact, Fn: func(s *string) *Result {
 		if utf8.RuneCountInString(*s) == length {
 			return nil
 		}
@@ -156,7 +156,7 @@ func RuleLengthExact(length int) Rule {
 }
 
 func RuleLengthBetween(min, max int) Rule {
-	return Rule{ID: IDLengthBetween, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDLengthBetween, Fn: func(s *string) *Result {
 		l := utf8.RuneCountInString(*s)
 		if l >= min && l <= max {
 			return nil
@@ -169,7 +169,7 @@ func RuleLengthBetween(min, max int) Rule {
 }
 
 func RuleContains(sub string) Rule {
-	return Rule{ID: IDContains, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDContains, Fn: func(s *string) *Result {
 		if strings.Contains(*s, sub) {
 			return nil
 		}
@@ -180,7 +180,7 @@ func RuleContains(sub string) Rule {
 }
 
 func RuleNotContains(sub string) Rule {
-	return Rule{ID: IDNotContains, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDNotContains, Fn: func(s *string) *Result {
 		if !strings.Contains(*s, sub) {
 			return nil
 		}
@@ -191,7 +191,7 @@ func RuleNotContains(sub string) Rule {
 }
 
 func RuleMatchesRegex(pattern *regexp.Regexp) Rule {
-	return Rule{ID: IDMatchesRegex, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDMatchesRegex, Fn: func(s *string) *Result {
 		if pattern.MatchString(*s) {
 			return nil
 		}
@@ -202,7 +202,7 @@ func RuleMatchesRegex(pattern *regexp.Regexp) Rule {
 }
 
 func RuleIsEmail() Rule {
-	return Rule{ID: IDIsEmail, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDIsEmail, Fn: func(s *string) *Result {
 		_, err := mail.ParseAddress(*s)
 		if err == nil {
 			return nil
@@ -214,7 +214,7 @@ func RuleIsEmail() Rule {
 }
 
 func RuleIsSha512() Rule {
-	return Rule{ID: IDIsSha512, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDIsSha512, Fn: func(s *string) *Result {
 		if len(*s) == 128 && RegexpSha512.MatchString(*s) {
 			return nil
 		}
@@ -223,7 +223,7 @@ func RuleIsSha512() Rule {
 }
 
 func RuleHasLowercase() Rule {
-	return Rule{ID: IDHasLowercase, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDHasLowercase, Fn: func(s *string) *Result {
 		if RegexpHasLowercase.MatchString(*s) {
 			return nil
 		}
@@ -232,7 +232,7 @@ func RuleHasLowercase() Rule {
 }
 
 func RuleHasUppercase() Rule {
-	return Rule{ID: IDHasUppercase, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDHasUppercase, Fn: func(s *string) *Result {
 		if RegexpHasUppercase.MatchString(*s) {
 			return nil
 		}
@@ -241,7 +241,7 @@ func RuleHasUppercase() Rule {
 }
 
 func RuleIsDigitsOnly() Rule {
-	return Rule{ID: IDIsDigitsOnly, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDIsDigitsOnly, Fn: func(s *string) *Result {
 		if RegexpDigitsOnly.MatchString(*s) {
 			return nil
 		}
@@ -250,7 +250,7 @@ func RuleIsDigitsOnly() Rule {
 }
 
 func RuleIsURL() Rule {
-	return Rule{ID: IDIsURL, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDIsURL, Fn: func(s *string) *Result {
 		u, err := url.ParseRequestURI(*s)
 		if err == nil && u.Host != "" && (u.Scheme == "http" || u.Scheme == "https" || u.Scheme == "ftp" || u.Scheme == "ftps") {
 			return nil
@@ -262,7 +262,7 @@ func RuleIsURL() Rule {
 }
 
 func RuleIsNotURL() Rule {
-	return Rule{ID: IDIsNotURL, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDIsNotURL, Fn: func(s *string) *Result {
 		u, err := url.ParseRequestURI(*s)
 		if !(err == nil && u.Host != "" && (u.Scheme == "http" || u.Scheme == "https" || u.Scheme == "ftp" || u.Scheme == "ftps")) {
 			return nil
@@ -274,7 +274,7 @@ func RuleIsNotURL() Rule {
 }
 
 func RuleHasDigit() Rule {
-	return Rule{ID: IDHasDigit, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDHasDigit, Fn: func(s *string) *Result {
 		if RegexpHasDigit.MatchString(*s) {
 			return nil
 		}
@@ -283,7 +283,7 @@ func RuleHasDigit() Rule {
 }
 
 func RuleHasSpecialChar() Rule {
-	return Rule{ID: IDHasSpecialChar, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDHasSpecialChar, Fn: func(s *string) *Result {
 		if RegexpHasSpecialChar.MatchString(*s) {
 			return nil
 		}
@@ -292,7 +292,7 @@ func RuleHasSpecialChar() Rule {
 }
 
 func RuleIsPasswordChars() Rule {
-	return Rule{ID: IDIsPasswordChars, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDIsPasswordChars, Fn: func(s *string) *Result {
 		if RegexpHasLowercase.MatchString(*s) &&
 			RegexpHasUppercase.MatchString(*s) &&
 			RegexpHasDigit.MatchString(*s) &&
@@ -304,7 +304,7 @@ func RuleIsPasswordChars() Rule {
 }
 
 func RuleIsUsernameChars() Rule {
-	return Rule{ID: IDIsUsernameChars, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDIsUsernameChars, Fn: func(s *string) *Result {
 		if RegexpUsernameChars.MatchString(*s) {
 			return nil
 		}
@@ -313,7 +313,7 @@ func RuleIsUsernameChars() Rule {
 }
 
 func RuleIsBoolString() Rule {
-	return Rule{ID: IDIsBoolString, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDIsBoolString, Fn: func(s *string) *Result {
 		v := strings.ToLower(strings.TrimSpace(*s))
 		if v == "1" || v == "0" || v == "true" || v == "false" {
 			return nil
@@ -323,7 +323,7 @@ func RuleIsBoolString() Rule {
 }
 
 func RuleIsNonNegativeInt() Rule {
-	return Rule{ID: IDIsNonNegativeInt, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDIsNonNegativeInt, Fn: func(s *string) *Result {
 		if RegexpNonNegativeInt.MatchString(*s) {
 			return nil
 		}
@@ -336,21 +336,21 @@ func RuleIsNonNegativeInt() Rule {
 // -----------------------------------------------------------------------------
 
 func RuleTrim() Rule {
-	return Rule{ID: IDTrim, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDTrim, Fn: func(s *string) *Result {
 		*s = strings.TrimSpace(*s)
 		return nil
 	}}
 }
 
 func RuleEscapeHTML() Rule {
-	return Rule{ID: IDEscapeHTML, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDEscapeHTML, Fn: func(s *string) *Result {
 		*s = html.EscapeString(*s)
 		return nil
 	}}
 }
 
 func RuleUnescapeURL() Rule {
-	return Rule{ID: IDUnescapeURL, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDUnescapeURL, Fn: func(s *string) *Result {
 		decoded, err := url.QueryUnescape(*s)
 		if err != nil {
 			*s = ""
@@ -368,7 +368,7 @@ func RuleUnescapeURL() Rule {
 // the canonical address back to *s. Returns a failure if the value cannot be
 // parsed as a valid email at all.
 func RuleNormalizeEmail() Rule {
-	return Rule{ID: IDNormalizeEmail, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDNormalizeEmail, Fn: func(s *string) *Result {
 		addr, err := mail.ParseAddress(*s)
 		if err != nil {
 			return &Result{Err: err}
@@ -380,7 +380,7 @@ func RuleNormalizeEmail() Rule {
 
 // RuleOneOf passes when *s equals one of the allowed values.
 func RuleOneOf(allowed ...string) Rule {
-	return Rule{ID: IDOneOf, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDOneOf, Fn: func(s *string) *Result {
 		for _, a := range allowed {
 			if *s == a {
 				return nil
@@ -392,7 +392,7 @@ func RuleOneOf(allowed ...string) Rule {
 
 // RuleNotOneOf passes when *s does not equal any of the excluded values.
 func RuleNotOneOf(excluded ...string) Rule {
-	return Rule{ID: IDNotOneOf, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDNotOneOf, Fn: func(s *string) *Result {
 		for _, e := range excluded {
 			if *s == e {
 				return &Result{Arg1: excluded}
@@ -404,7 +404,7 @@ func RuleNotOneOf(excluded ...string) Rule {
 
 // RuleStartsWith passes when *s begins with prefix.
 func RuleStartsWith(prefix string) Rule {
-	return Rule{ID: IDStartsWith, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDStartsWith, Fn: func(s *string) *Result {
 		if strings.HasPrefix(*s, prefix) {
 			return nil
 		}
@@ -414,7 +414,7 @@ func RuleStartsWith(prefix string) Rule {
 
 // RuleEndsWith passes when *s ends with suffix.
 func RuleEndsWith(suffix string) Rule {
-	return Rule{ID: IDEndsWith, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDEndsWith, Fn: func(s *string) *Result {
 		if strings.HasSuffix(*s, suffix) {
 			return nil
 		}
@@ -424,7 +424,7 @@ func RuleEndsWith(suffix string) Rule {
 
 // RuleIsIP passes when *s parses as either an IPv4 or IPv6 address.
 func RuleIsIP() Rule {
-	return Rule{ID: IDIsIP, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDIsIP, Fn: func(s *string) *Result {
 		if net.ParseIP(*s) != nil {
 			return nil
 		}
@@ -437,7 +437,7 @@ func RuleIsIP() Rule {
 // addresses (e.g. "::ffff:1.2.3.4") are rejected here and accepted by
 // RuleIsIPv6 instead.
 func RuleIsIPv4() Rule {
-	return Rule{ID: IDIsIPv4, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDIsIPv4, Fn: func(s *string) *Result {
 		if net.ParseIP(*s) != nil && strings.Contains(*s, ".") && !strings.Contains(*s, ":") {
 			return nil
 		}
@@ -448,7 +448,7 @@ func RuleIsIPv4() Rule {
 // RuleIsIPv6 passes when *s is an IPv6 address (any form containing ":").
 // IPv4-mapped IPv6 addresses such as "::ffff:1.2.3.4" pass here.
 func RuleIsIPv6() Rule {
-	return Rule{ID: IDIsIPv6, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDIsIPv6, Fn: func(s *string) *Result {
 		if net.ParseIP(*s) != nil && strings.Contains(*s, ":") {
 			return nil
 		}
@@ -458,7 +458,7 @@ func RuleIsIPv6() Rule {
 
 // RuleIsAlpha passes when *s contains only ASCII letters (a-z, A-Z) and is non-empty.
 func RuleIsAlpha() Rule {
-	return Rule{ID: IDIsAlpha, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDIsAlpha, Fn: func(s *string) *Result {
 		if RegexpAlpha.MatchString(*s) {
 			return nil
 		}
@@ -468,7 +468,7 @@ func RuleIsAlpha() Rule {
 
 // RuleIsAlphaNumeric passes when *s contains only ASCII letters and digits and is non-empty.
 func RuleIsAlphaNumeric() Rule {
-	return Rule{ID: IDIsAlphaNumeric, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDIsAlphaNumeric, Fn: func(s *string) *Result {
 		if RegexpAlphaNumeric.MatchString(*s) {
 			return nil
 		}
@@ -479,7 +479,7 @@ func RuleIsAlphaNumeric() Rule {
 // RuleIsASCII passes when every byte of *s is in the 7-bit ASCII range (0-127).
 // The empty string passes trivially.
 func RuleIsASCII() Rule {
-	return Rule{ID: IDIsASCII, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDIsASCII, Fn: func(s *string) *Result {
 		for i := 0; i < len(*s); i++ {
 			if (*s)[i] > 127 {
 				return &Result{}
@@ -491,7 +491,7 @@ func RuleIsASCII() Rule {
 
 // RuleIsBase64 passes when *s is valid standard base64 (with padding).
 func RuleIsBase64() Rule {
-	return Rule{ID: IDIsBase64, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDIsBase64, Fn: func(s *string) *Result {
 		if _, err := base64.StdEncoding.DecodeString(*s); err == nil {
 			return nil
 		}
@@ -501,7 +501,7 @@ func RuleIsBase64() Rule {
 
 // RuleIsBase64URL passes when *s is valid URL-safe base64 (with padding).
 func RuleIsBase64URL() Rule {
-	return Rule{ID: IDIsBase64URL, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDIsBase64URL, Fn: func(s *string) *Result {
 		if _, err := base64.URLEncoding.DecodeString(*s); err == nil {
 			return nil
 		}
@@ -512,7 +512,7 @@ func RuleIsBase64URL() Rule {
 // RuleIsJSON passes when *s is a syntactically valid JSON value
 // (object, array, string, number, true, false, or null).
 func RuleIsJSON() Rule {
-	return Rule{ID: IDIsJSON, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDIsJSON, Fn: func(s *string) *Result {
 		if json.Valid([]byte(*s)) {
 			return nil
 		}
@@ -524,7 +524,7 @@ func RuleIsJSON() Rule {
 // Characters without case (digits, punctuation, spaces) do not cause failure.
 // The empty string passes.
 func RuleIsLowercase() Rule {
-	return Rule{ID: IDIsLowercase, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDIsLowercase, Fn: func(s *string) *Result {
 		if strings.ToLower(*s) == *s {
 			return nil
 		}
@@ -536,7 +536,7 @@ func RuleIsLowercase() Rule {
 // Characters without case (digits, punctuation, spaces) do not cause failure.
 // The empty string passes.
 func RuleIsUppercase() Rule {
-	return Rule{ID: IDIsUppercase, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDIsUppercase, Fn: func(s *string) *Result {
 		if strings.ToUpper(*s) == *s {
 			return nil
 		}
@@ -550,7 +550,7 @@ func RuleIsUppercase() Rule {
 
 // RuleToLower is a sanitizer that lowercases *s.
 func RuleToLower() Rule {
-	return Rule{ID: IDToLower, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDToLower, Fn: func(s *string) *Result {
 		*s = strings.ToLower(*s)
 		return nil
 	}}
@@ -558,7 +558,7 @@ func RuleToLower() Rule {
 
 // RuleToUpper is a sanitizer that uppercases *s.
 func RuleToUpper() Rule {
-	return Rule{ID: IDToUpper, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDToUpper, Fn: func(s *string) *Result {
 		*s = strings.ToUpper(*s)
 		return nil
 	}}
@@ -569,7 +569,7 @@ func RuleToUpper() Rule {
 // It is intended for simple content cleanup (e.g. stripping markup from a
 // pasted snippet) and does not attempt full HTML parsing.
 func RuleStripHTMLTags() Rule {
-	return Rule{ID: IDStripHTMLTags, Fn: func(s *string) *Result {
+	return Rule{TypeID: TypeID, ID: IDStripHTMLTags, Fn: func(s *string) *Result {
 		*s = RegexpHTMLTag.ReplaceAllString(*s, "")
 		return nil
 	}}

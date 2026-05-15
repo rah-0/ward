@@ -39,7 +39,7 @@ func IDsAdd(name string) uint32 {
 
 // RuleGreaterThan passes when v > min.
 func RuleGreaterThan(min time.Duration) Rule {
-	return Rule{ID: IDGreaterThan, Fn: func(v *time.Duration) *Result {
+	return Rule{TypeID: TypeID, ID: IDGreaterThan, Fn: func(v *time.Duration) *Result {
 		if *v > min {
 			return nil
 		}
@@ -49,7 +49,7 @@ func RuleGreaterThan(min time.Duration) Rule {
 
 // RuleGreaterThanOrEqual passes when v >= min.
 func RuleGreaterThanOrEqual(min time.Duration) Rule {
-	return Rule{ID: IDGreaterThanOrEqual, Fn: func(v *time.Duration) *Result {
+	return Rule{TypeID: TypeID, ID: IDGreaterThanOrEqual, Fn: func(v *time.Duration) *Result {
 		if *v >= min {
 			return nil
 		}
@@ -59,7 +59,7 @@ func RuleGreaterThanOrEqual(min time.Duration) Rule {
 
 // RuleLesserThan passes when v < max.
 func RuleLesserThan(max time.Duration) Rule {
-	return Rule{ID: IDLesserThan, Fn: func(v *time.Duration) *Result {
+	return Rule{TypeID: TypeID, ID: IDLesserThan, Fn: func(v *time.Duration) *Result {
 		if *v < max {
 			return nil
 		}
@@ -69,7 +69,7 @@ func RuleLesserThan(max time.Duration) Rule {
 
 // RuleLesserThanOrEqual passes when v <= max.
 func RuleLesserThanOrEqual(max time.Duration) Rule {
-	return Rule{ID: IDLesserThanOrEqual, Fn: func(v *time.Duration) *Result {
+	return Rule{TypeID: TypeID, ID: IDLesserThanOrEqual, Fn: func(v *time.Duration) *Result {
 		if *v <= max {
 			return nil
 		}
@@ -79,7 +79,7 @@ func RuleLesserThanOrEqual(max time.Duration) Rule {
 
 // RuleInRange passes when min <= v <= max (inclusive on both ends).
 func RuleInRange(min, max time.Duration) Rule {
-	return Rule{ID: IDInRange, Fn: func(v *time.Duration) *Result {
+	return Rule{TypeID: TypeID, ID: IDInRange, Fn: func(v *time.Duration) *Result {
 		if *v >= min && *v <= max {
 			return nil
 		}
@@ -89,7 +89,7 @@ func RuleInRange(min, max time.Duration) Rule {
 
 // RulePositive passes when v > 0.
 func RulePositive() Rule {
-	return Rule{ID: IDPositive, Fn: func(v *time.Duration) *Result {
+	return Rule{TypeID: TypeID, ID: IDPositive, Fn: func(v *time.Duration) *Result {
 		if *v > 0 {
 			return nil
 		}
@@ -99,7 +99,7 @@ func RulePositive() Rule {
 
 // RulePositiveOrZero passes when v >= 0.
 func RulePositiveOrZero() Rule {
-	return Rule{ID: IDPositiveOrZero, Fn: func(v *time.Duration) *Result {
+	return Rule{TypeID: TypeID, ID: IDPositiveOrZero, Fn: func(v *time.Duration) *Result {
 		if *v >= 0 {
 			return nil
 		}
@@ -109,7 +109,7 @@ func RulePositiveOrZero() Rule {
 
 // RuleOneOf passes when *v equals one of the allowed duration values.
 func RuleOneOf(allowed ...time.Duration) Rule {
-	return Rule{ID: IDOneOf, Fn: func(v *time.Duration) *Result {
+	return Rule{TypeID: TypeID, ID: IDOneOf, Fn: func(v *time.Duration) *Result {
 		for _, a := range allowed {
 			if *v == a {
 				return nil
@@ -121,7 +121,7 @@ func RuleOneOf(allowed ...time.Duration) Rule {
 
 // RuleNotOneOf passes when *v does not equal any of the excluded duration values.
 func RuleNotOneOf(excluded ...time.Duration) Rule {
-	return Rule{ID: IDNotOneOf, Fn: func(v *time.Duration) *Result {
+	return Rule{TypeID: TypeID, ID: IDNotOneOf, Fn: func(v *time.Duration) *Result {
 		for _, e := range excluded {
 			if *v == e {
 				return &Result{Arg1: excluded}
