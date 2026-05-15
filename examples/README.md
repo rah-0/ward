@@ -35,6 +35,9 @@ These are type aliases (using `=`), not new types. They exist purely for ergonom
 
 ```go
 func New(name string, ptr *YourType, rules ...Rule) *Field {
+    for i := range rules {
+        rules[i].TypeID = TypeID
+    }
     return &Field{
         TypeID: TypeID,
         Name:   name,
@@ -48,13 +51,13 @@ func New(name string, ptr *YourType, rules ...Rule) *Field {
 
 ### 4. Write rule functions
 
-Every rule must set `TypeID` to the package's constant. `Validate()` reads `TypeID` from the rule, not the field — this ensures each rule carries its own identity in the result.
+Rules only need `ID` and `Fn`. `TypeID` is stamped automatically by `New()` — rule constructors never set it.
 
 A rule returns `nil` on pass and a non-nil `*ward.Result` only on failure.
 
 ```go
 func RuleMustBePositive() Rule {
-    return Rule{TypeID: TypeID, ID: 2, Fn: func(v *YourType) *ward.Result {
+    return Rule{ID: 2, Fn: func(v *YourType) *ward.Result {
         if *v > 0 {
             return nil
         }
@@ -67,7 +70,7 @@ Use `Arg1` and `Arg2` on the result to carry rule parameters back to the caller:
 
 ```go
 func RuleInRange(min, max YourType) Rule {
-    return Rule{TypeID: TypeID, ID: 3, Fn: func(v *YourType) *ward.Result {
+    return Rule{ID: 3, Fn: func(v *YourType) *ward.Result {
         if *v >= min && *v <= max {
             return nil
         }
@@ -80,7 +83,7 @@ Use `Err` for rules that wrap a stdlib parse or decode call:
 
 ```go
 func RuleIsValid() Rule {
-    return Rule{TypeID: TypeID, ID: 4, Fn: func(v *YourType) *ward.Result {
+    return Rule{ID: 4, Fn: func(v *YourType) *ward.Result {
         if err := validate(*v); err != nil {
             return &ward.Result{Err: err}
         }
@@ -95,7 +98,7 @@ A rule that mutates `*v` and returns `nil` is a sanitizer. It runs in the same c
 
 ```go
 func RuleNormalize() Rule {
-    return Rule{TypeID: TypeID, ID: 5, Fn: func(v *YourType) *ward.Result {
+    return Rule{ID: 5, Fn: func(v *YourType) *ward.Result {
         *v = normalize(*v)
         return nil
     }}
@@ -117,11 +120,14 @@ type Rule  = ward.Rule[MyType]
 type Field = ward.Field[MyType]
 
 func New(name string, ptr *MyType, rules ...Rule) *Field {
+    for i := range rules {
+        rules[i].TypeID = TypeID
+    }
     return &Field{TypeID: TypeID, Name: name, Value: ptr, Rules: rules}
 }
 
 func RuleIsPositive() Rule {
-    return Rule{TypeID: TypeID, ID: 2, Fn: func(v *MyType) *ward.Result {
+    return Rule{ID: 2, Fn: func(v *MyType) *ward.Result {
         if *v > 0 {
             return nil
         }

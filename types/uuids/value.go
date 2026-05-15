@@ -13,6 +13,9 @@ type Result = ward.Result
 // New constructs a Field pointing directly to fieldPtr.
 // The underlying type is string; a UUID is validated as a formatted string.
 func New(name string, fieldPtr *string, rules ...Rule) *Field {
+	for i := range rules {
+		rules[i].TypeID = TypeID
+	}
 	return &Field{
 		TypeID: TypeID,
 		Name:   name,

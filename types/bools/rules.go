@@ -21,7 +21,7 @@ func IDsAdd(name string) uint32 {
 
 // RuleIsTrue passes when v is true.
 func RuleIsTrue() Rule {
-	return Rule{TypeID: TypeID, ID: IDIsTrue, Fn: func(v *bool) *Result {
+	return Rule{ID: IDIsTrue, Fn: func(v *bool) *Result {
 		if *v {
 			return nil
 		}
@@ -31,7 +31,7 @@ func RuleIsTrue() Rule {
 
 // RuleIsFalse passes when v is false.
 func RuleIsFalse() Rule {
-	return Rule{TypeID: TypeID, ID: IDIsFalse, Fn: func(v *bool) *Result {
+	return Rule{ID: IDIsFalse, Fn: func(v *bool) *Result {
 		if !*v {
 			return nil
 		}

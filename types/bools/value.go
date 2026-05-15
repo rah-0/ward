@@ -12,6 +12,9 @@ type Result = ward.Result
 
 // New constructs a Field pointing directly to fieldPtr.
 func New(name string, fieldPtr *bool, rules ...Rule) *Field {
+	for i := range rules {
+		rules[i].TypeID = TypeID
+	}
 	return &Field{
 		TypeID: TypeID,
 		Name:   name,

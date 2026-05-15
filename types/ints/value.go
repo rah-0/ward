@@ -15,6 +15,9 @@ type Result = ward.Result
 // the sanitized value after Run(). Callers that need to preserve the original
 // should copy it before calling Run().
 func New(name string, fieldPtr *int64, rules ...Rule) *Field {
+	for i := range rules {
+		rules[i].TypeID = TypeID
+	}
 	return &Field{
 		TypeID: TypeID,
 		Name:   name,

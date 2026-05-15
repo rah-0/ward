@@ -1,11 +1,10 @@
 package ward
 
 // Field holds a pointer to the value being validated, its rules, and its policy.
-// TypeID identifies which type package created the field; it is set by each
-// package's New() function and can be read for informational purposes, but
-// Validate() reads the TypeID from each Rule, not from the Field.
-// Sanitizers mutate *Value in place — callers that need to preserve the original
-// should copy it before calling Run().
+// TypeID identifies which type package created the field. Each package's New()
+// function stamps this value on every rule automatically, so Validate() reads
+// TypeID from each Rule. Sanitizers mutate *Value in place — callers that need
+// to preserve the original should copy it before calling Run().
 type Field[T any] struct {
 	TypeID uint32
 	Name   string

@@ -53,7 +53,7 @@ func IDsAdd(name string) uint32 {
 
 // RuleGreaterThan passes when v > min.
 func RuleGreaterThan(min int64) Rule {
-	return Rule{TypeID: TypeID, ID: IDGreaterThan, Fn: func(v *int64) *Result {
+	return Rule{ID: IDGreaterThan, Fn: func(v *int64) *Result {
 		if *v > min {
 			return nil
 		}
@@ -63,7 +63,7 @@ func RuleGreaterThan(min int64) Rule {
 
 // RuleGreaterThanOrEqual passes when v >= min.
 func RuleGreaterThanOrEqual(min int64) Rule {
-	return Rule{TypeID: TypeID, ID: IDGreaterThanOrEqual, Fn: func(v *int64) *Result {
+	return Rule{ID: IDGreaterThanOrEqual, Fn: func(v *int64) *Result {
 		if *v >= min {
 			return nil
 		}
@@ -73,7 +73,7 @@ func RuleGreaterThanOrEqual(min int64) Rule {
 
 // RuleLesserThan passes when v < max.
 func RuleLesserThan(max int64) Rule {
-	return Rule{TypeID: TypeID, ID: IDLesserThan, Fn: func(v *int64) *Result {
+	return Rule{ID: IDLesserThan, Fn: func(v *int64) *Result {
 		if *v < max {
 			return nil
 		}
@@ -83,7 +83,7 @@ func RuleLesserThan(max int64) Rule {
 
 // RuleLesserThanOrEqual passes when v <= max.
 func RuleLesserThanOrEqual(max int64) Rule {
-	return Rule{TypeID: TypeID, ID: IDLesserThanOrEqual, Fn: func(v *int64) *Result {
+	return Rule{ID: IDLesserThanOrEqual, Fn: func(v *int64) *Result {
 		if *v <= max {
 			return nil
 		}
@@ -93,7 +93,7 @@ func RuleLesserThanOrEqual(max int64) Rule {
 
 // RuleInRange passes when min <= v <= max (inclusive on both ends).
 func RuleInRange(min, max int64) Rule {
-	return Rule{TypeID: TypeID, ID: IDInRange, Fn: func(v *int64) *Result {
+	return Rule{ID: IDInRange, Fn: func(v *int64) *Result {
 		if *v >= min && *v <= max {
 			return nil
 		}
@@ -103,7 +103,7 @@ func RuleInRange(min, max int64) Rule {
 
 // RulePositive passes when v > 0.
 func RulePositive() Rule {
-	return Rule{TypeID: TypeID, ID: IDPositive, Fn: func(v *int64) *Result {
+	return Rule{ID: IDPositive, Fn: func(v *int64) *Result {
 		if *v > 0 {
 			return nil
 		}
@@ -113,7 +113,7 @@ func RulePositive() Rule {
 
 // RulePositiveOrZero passes when v >= 0.
 func RulePositiveOrZero() Rule {
-	return Rule{TypeID: TypeID, ID: IDPositiveOrZero, Fn: func(v *int64) *Result {
+	return Rule{ID: IDPositiveOrZero, Fn: func(v *int64) *Result {
 		if *v >= 0 {
 			return nil
 		}
@@ -123,7 +123,7 @@ func RulePositiveOrZero() Rule {
 
 // RuleMultipleOf passes when v is evenly divisible by n.
 func RuleMultipleOf(n int64) Rule {
-	return Rule{TypeID: TypeID, ID: IDMultipleOf, Fn: func(v *int64) *Result {
+	return Rule{ID: IDMultipleOf, Fn: func(v *int64) *Result {
 		if n != 0 && *v%n == 0 {
 			return nil
 		}
@@ -133,7 +133,7 @@ func RuleMultipleOf(n int64) Rule {
 
 // RuleOneOf passes when *v equals one of the allowed values.
 func RuleOneOf(allowed ...int64) Rule {
-	return Rule{TypeID: TypeID, ID: IDOneOf, Fn: func(v *int64) *Result {
+	return Rule{ID: IDOneOf, Fn: func(v *int64) *Result {
 		for _, a := range allowed {
 			if *v == a {
 				return nil
@@ -145,7 +145,7 @@ func RuleOneOf(allowed ...int64) Rule {
 
 // RuleNotOneOf passes when *v does not equal any of the excluded values.
 func RuleNotOneOf(excluded ...int64) Rule {
-	return Rule{TypeID: TypeID, ID: IDNotOneOf, Fn: func(v *int64) *Result {
+	return Rule{ID: IDNotOneOf, Fn: func(v *int64) *Result {
 		for _, e := range excluded {
 			if *v == e {
 				return &Result{Arg1: excluded}
@@ -157,7 +157,7 @@ func RuleNotOneOf(excluded ...int64) Rule {
 
 // RuleNegative passes when v < 0.
 func RuleNegative() Rule {
-	return Rule{TypeID: TypeID, ID: IDNegative, Fn: func(v *int64) *Result {
+	return Rule{ID: IDNegative, Fn: func(v *int64) *Result {
 		if *v < 0 {
 			return nil
 		}
@@ -167,7 +167,7 @@ func RuleNegative() Rule {
 
 // RuleNegativeOrZero passes when v <= 0.
 func RuleNegativeOrZero() Rule {
-	return Rule{TypeID: TypeID, ID: IDNegativeOrZero, Fn: func(v *int64) *Result {
+	return Rule{ID: IDNegativeOrZero, Fn: func(v *int64) *Result {
 		if *v <= 0 {
 			return nil
 		}
@@ -177,7 +177,7 @@ func RuleNegativeOrZero() Rule {
 
 // RuleIsEven passes when v is even (divisible by 2, including 0 and negatives).
 func RuleIsEven() Rule {
-	return Rule{TypeID: TypeID, ID: IDIsEven, Fn: func(v *int64) *Result {
+	return Rule{ID: IDIsEven, Fn: func(v *int64) *Result {
 		if *v%2 == 0 {
 			return nil
 		}
@@ -187,7 +187,7 @@ func RuleIsEven() Rule {
 
 // RuleIsOdd passes when v is odd.
 func RuleIsOdd() Rule {
-	return Rule{TypeID: TypeID, ID: IDIsOdd, Fn: func(v *int64) *Result {
+	return Rule{ID: IDIsOdd, Fn: func(v *int64) *Result {
 		if *v%2 != 0 {
 			return nil
 		}
@@ -202,7 +202,7 @@ func RuleIsOdd() Rule {
 // RuleClamp is a sanitizer that clamps *v into the inclusive range [min, max].
 // If min > max, the rule is a no-op to avoid producing nonsensical results.
 func RuleClamp(min, max int64) Rule {
-	return Rule{TypeID: TypeID, ID: IDClamp, Fn: func(v *int64) *Result {
+	return Rule{ID: IDClamp, Fn: func(v *int64) *Result {
 		if min > max {
 			return nil
 		}
@@ -217,7 +217,7 @@ func RuleClamp(min, max int64) Rule {
 
 // RuleClampMin is a sanitizer that raises *v to min if it is below.
 func RuleClampMin(min int64) Rule {
-	return Rule{TypeID: TypeID, ID: IDClampMin, Fn: func(v *int64) *Result {
+	return Rule{ID: IDClampMin, Fn: func(v *int64) *Result {
 		if *v < min {
 			*v = min
 		}
@@ -227,7 +227,7 @@ func RuleClampMin(min int64) Rule {
 
 // RuleClampMax is a sanitizer that lowers *v to max if it is above.
 func RuleClampMax(max int64) Rule {
-	return Rule{TypeID: TypeID, ID: IDClampMax, Fn: func(v *int64) *Result {
+	return Rule{ID: IDClampMax, Fn: func(v *int64) *Result {
 		if *v > max {
 			*v = max
 		}
@@ -238,7 +238,7 @@ func RuleClampMax(max int64) Rule {
 // RuleAbs is a sanitizer that replaces *v with its absolute value.
 // math.MinInt64 has no positive counterpart and is left unchanged.
 func RuleAbs() Rule {
-	return Rule{TypeID: TypeID, ID: IDAbs, Fn: func(v *int64) *Result {
+	return Rule{ID: IDAbs, Fn: func(v *int64) *Result {
 		if *v < 0 && *v != -1<<63 {
 			*v = -*v
 		}

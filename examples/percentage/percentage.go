@@ -9,6 +9,9 @@ type Rule = ward.Rule[float64]
 type Field = ward.Field[float64]
 
 func New(name string, ptr *float64, rules ...Rule) *Field {
+	for i := range rules {
+		rules[i].TypeID = TypeID
+	}
 	return &Field{
 		TypeID: TypeID,
 		Name:   name,

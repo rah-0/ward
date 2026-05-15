@@ -15,7 +15,7 @@ var IDs = []uint32{
 }
 
 func RuleInRange(min, max float64) Rule {
-	return Rule{TypeID: TypeID, ID: IDInRange, Fn: func(v *float64) *ward.Result {
+	return Rule{ID: IDInRange, Fn: func(v *float64) *ward.Result {
 		if *v >= min && *v <= max {
 			return nil
 		}
@@ -27,7 +27,7 @@ func RuleInRange(min, max float64) Rule {
 }
 
 func RuleIsPositive() Rule {
-	return Rule{TypeID: TypeID, ID: IDIsPositive, Fn: func(v *float64) *ward.Result {
+	return Rule{ID: IDIsPositive, Fn: func(v *float64) *ward.Result {
 		if *v > 0 {
 			return nil
 		}
@@ -36,7 +36,7 @@ func RuleIsPositive() Rule {
 }
 
 func RuleIsWhole() Rule {
-	return Rule{TypeID: TypeID, ID: IDIsWhole, Fn: func(v *float64) *ward.Result {
+	return Rule{ID: IDIsWhole, Fn: func(v *float64) *ward.Result {
 		if *v == float64(int64(*v)) {
 			return nil
 		}

@@ -22,7 +22,7 @@ var IDs = []uint32{
 }
 
 func RuleHasCountryCode() Rule {
-	return Rule{TypeID: TypeID, ID: IDHasCountryCode, Fn: func(p *PhoneNumber) *ward.Result {
+	return Rule{ID: IDHasCountryCode, Fn: func(p *PhoneNumber) *ward.Result {
 		if strings.TrimSpace(p.CountryCode) != "" {
 			return nil
 		}
@@ -31,7 +31,7 @@ func RuleHasCountryCode() Rule {
 }
 
 func RuleHasNumber() Rule {
-	return Rule{TypeID: TypeID, ID: IDHasNumber, Fn: func(p *PhoneNumber) *ward.Result {
+	return Rule{ID: IDHasNumber, Fn: func(p *PhoneNumber) *ward.Result {
 		if strings.TrimSpace(p.Number) != "" {
 			return nil
 		}
@@ -40,7 +40,7 @@ func RuleHasNumber() Rule {
 }
 
 func RuleValidLength(min, max int) Rule {
-	return Rule{TypeID: TypeID, ID: IDValidLength, Fn: func(p *PhoneNumber) *ward.Result {
+	return Rule{ID: IDValidLength, Fn: func(p *PhoneNumber) *ward.Result {
 		n := utf8.RuneCountInString(p.Number)
 		if n >= min && n <= max {
 			return nil
@@ -53,7 +53,7 @@ func RuleValidLength(min, max int) Rule {
 }
 
 func RuleDigitsOnly() Rule {
-	return Rule{TypeID: TypeID, ID: IDDigitsOnly, Fn: func(p *PhoneNumber) *ward.Result {
+	return Rule{ID: IDDigitsOnly, Fn: func(p *PhoneNumber) *ward.Result {
 		for _, c := range p.Number {
 			if c < '0' || c > '9' {
 				return &ward.Result{}

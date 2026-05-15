@@ -46,7 +46,7 @@ func IDsAdd(name string) uint32 {
 // style braces. Callers that require strictly canonical input must add their
 // own format check.
 func RuleIsValidV4() Rule {
-	return Rule{TypeID: TypeID, ID: IDIsValidV4, Fn: func(s *string) *Result {
+	return Rule{ID: IDIsValidV4, Fn: func(s *string) *Result {
 		id, err := uuid.Parse(*s)
 		if err != nil {
 			return &Result{Err: err}
@@ -63,7 +63,7 @@ func RuleIsValidV4() Rule {
 // rule is provided for explicit composition where the intent is to spell
 // out "must not be nil" alongside other V4 checks.
 func RuleIsNotNilV4() Rule {
-	return Rule{TypeID: TypeID, ID: IDIsNotNilV4, Fn: func(s *string) *Result {
+	return Rule{ID: IDIsNotNilV4, Fn: func(s *string) *Result {
 		id, err := uuid.Parse(*s)
 		if err != nil {
 			return &Result{Err: err}
@@ -85,7 +85,7 @@ func RuleIsNotNilV4() Rule {
 // formatting-tolerant) thanks to uuid.Parse.
 func RuleOneOfV4(allowed ...string) Rule {
 	parsed := parseUUIDsV4(allowed)
-	return Rule{TypeID: TypeID, ID: IDOneOfV4, Fn: func(s *string) *Result {
+	return Rule{ID: IDOneOfV4, Fn: func(s *string) *Result {
 		id, err := uuid.Parse(*s)
 		if err != nil {
 			return &Result{Err: err, Arg1: allowed}
@@ -107,7 +107,7 @@ func RuleOneOfV4(allowed ...string) Rule {
 // construction; invalid entries are silently dropped.
 func RuleNotOneOfV4(excluded ...string) Rule {
 	parsed := parseUUIDsV4(excluded)
-	return Rule{TypeID: TypeID, ID: IDNotOneOfV4, Fn: func(s *string) *Result {
+	return Rule{ID: IDNotOneOfV4, Fn: func(s *string) *Result {
 		id, err := uuid.Parse(*s)
 		if err != nil {
 			return &Result{Err: err}
