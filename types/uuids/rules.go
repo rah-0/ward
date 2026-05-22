@@ -19,6 +19,8 @@ const (
 	IDIsNotNilV4 uint32 = 3
 	IDOneOfV4    uint32 = 4
 	IDNotOneOfV4 uint32 = 5
+	IDOneOf      uint32 = 6
+	IDNotOneOf   uint32 = 7
 )
 
 // IDs maps every rule ID in this package to its name.
@@ -27,6 +29,8 @@ var IDs = map[uint32]string{
 	IDIsNotNilV4: "IsNotNilV4",
 	IDOneOfV4:    "OneOfV4",
 	IDNotOneOfV4: "NotOneOfV4",
+	IDOneOf:      "OneOf",
+	IDNotOneOf:   "NotOneOf",
 }
 
 // IDsAdd registers a custom rule name and returns its automatically assigned ID.
@@ -132,6 +136,64 @@ func parseUUIDsV4(ss []string) []uuid.UUID {
 	for _, s := range ss {
 		id, err := uuid.Parse(s)
 		if err != nil || id.Version() != 4 {
+			continue
+		}
+		out = append(out, id)
+	}
+	return out
+}
+
+// -----------------------------------------------------------------------------
+// Version-agnostic
+// -----------------------------------------------------------------------------
+
+// RuleOneOf passes when *s parses as any UUID and equals one of the allowed
+// values. Unlike RuleOneOfV4, no version check is performed — v1, v4, v7, and
+// any other parseable form are all eligible. Allowed UUIDs are parsed once at
+// rule construction; entries that fail to parse are silently skipped.
+func RuleOneOf(allowed ...string) Rule {
+	parsed := parseUUIDs(allowed)
+	return Rule{ID: IDOneOf, Fn: func(s *string) *Result {
+		id, err := uuid.Parse(*s)
+		if err != nil {
+			return &Result{Err: err, Arg1: allowed}
+		}
+		for _, a := range parsed {
+			if id == a {
+				return nil
+			}
+		}
+		return &Result{Arg1: allowed}
+	}}
+}
+
+// RuleNotOneOf passes when *s parses as any UUID and is not equal to any of
+// the excluded values. No version check is performed. Excluded UUIDs are
+// parsed once at rule construction; entries that fail to parse are silently
+// skipped.
+func RuleNotOneOf(excluded ...string) Rule {
+	parsed := parseUUIDs(excluded)
+	return Rule{ID: IDNotOneOf, Fn: func(s *string) *Result {
+		id, err := uuid.Parse(*s)
+		if err != nil {
+			return &Result{Err: err}
+		}
+		for _, e := range parsed {
+			if id == e {
+				return &Result{Arg1: excluded}
+			}
+		}
+		return nil
+	}}
+}
+
+// parseUUIDs parses a slice of UUID strings, keeping any that successfully
+// parse regardless of version.
+func parseUUIDs(ss []string) []uuid.UUID {
+	out := make([]uuid.UUID, 0, len(ss))
+	for _, s := range ss {
+		id, err := uuid.Parse(s)
+		if err != nil {
 			continue
 		}
 		out = append(out, id)

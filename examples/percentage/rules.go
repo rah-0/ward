@@ -8,10 +8,16 @@ const (
 	IDIsWhole    uint32 = 4
 )
 
-var IDs = []uint32{
-	IDInRange,
-	IDIsPositive,
-	IDIsWhole,
+// IDs maps every rule ID in this package to its name.
+var IDs = map[uint32]string{
+	IDInRange:    "InRange",
+	IDIsPositive: "IsPositive",
+	IDIsWhole:    "IsWhole",
+}
+
+// IDsAdd registers a custom rule name and returns its automatically assigned ID.
+func IDsAdd(name string) uint32 {
+	return ward.IDsAdd(IDs, name)
 }
 
 func RuleInRange(min, max float64) Rule {

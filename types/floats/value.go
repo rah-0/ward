@@ -15,13 +15,15 @@ type Result = ward.Result
 // the sanitized value after Run(). Callers that need to preserve the original
 // should copy it before calling Run().
 func New(name string, fieldPtr *float64, rules ...Rule) *Field {
-	for i := range rules {
-		rules[i].TypeID = TypeID
+	owned := make([]Rule, len(rules))
+	copy(owned, rules)
+	for i := range owned {
+		owned[i].TypeID = TypeID
 	}
 	return &Field{
 		TypeID: TypeID,
 		Name:   name,
 		Value:  fieldPtr,
-		Rules:  rules,
+		Rules:  owned,
 	}
 }

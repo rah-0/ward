@@ -257,9 +257,10 @@ func RuleIsURL() Rule {
 		if err == nil && u.Host != "" && (u.Scheme == "http" || u.Scheme == "https" || u.Scheme == "ftp" || u.Scheme == "ftps") {
 			return nil
 		}
-		return &Result{
-			Err: err,
+		if err != nil {
+			return &Result{Err: err}
 		}
+		return &Result{}
 	}}
 }
 
@@ -269,9 +270,7 @@ func RuleIsNotURL() Rule {
 		if !(err == nil && u.Host != "" && (u.Scheme == "http" || u.Scheme == "https" || u.Scheme == "ftp" || u.Scheme == "ftps")) {
 			return nil
 		}
-		return &Result{
-			Err: err,
-		}
+		return &Result{}
 	}}
 }
 

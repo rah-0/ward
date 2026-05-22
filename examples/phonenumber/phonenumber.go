@@ -16,13 +16,15 @@ type Rule = ward.Rule[PhoneNumber]
 type Field = ward.Field[PhoneNumber]
 
 func New(name string, ptr *PhoneNumber, rules ...Rule) *Field {
-	for i := range rules {
-		rules[i].TypeID = TypeID
+	owned := make([]Rule, len(rules))
+	copy(owned, rules)
+	for i := range owned {
+		owned[i].TypeID = TypeID
 	}
 	return &Field{
 		TypeID: TypeID,
 		Name:   name,
 		Value:  ptr,
-		Rules:  rules,
+		Rules:  owned,
 	}
 }

@@ -145,8 +145,16 @@ func RuleIsFinite() Rule {
 
 // RuleMaxDecimalPlaces passes when v has at most n digits after the decimal point.
 // Uses the shortest decimal representation, so 1.5 has 1 decimal place, not 15.
+// NaN and ±Inf fail (they have no decimal representation). Negative n is
+// treated as 0, matching RuleRound.
 func RuleMaxDecimalPlaces(n int) Rule {
 	return Rule{ID: IDMaxDecimalPlaces, Fn: func(v *float64) *Result {
+		if math.IsNaN(*v) || math.IsInf(*v, 0) {
+			return &Result{Arg1: n}
+		}
+		if n < 0 {
+			n = 0
+		}
 		s := strconv.FormatFloat(*v, 'f', -1, 64)
 		if idx := strings.Index(s, "."); idx != -1 {
 			if len(s)-idx-1 > n {
@@ -238,7 +246,9 @@ func RuleIsInf() Rule {
 
 // RuleRound is a sanitizer that rounds *v to n decimal places using
 // half-away-from-zero rounding (math.Round). Negative n is treated as 0.
-// NaN and ±Inf are left unchanged.
+// NaN and ±Inf are left unchanged. If 10^n overflows float64 (n ≳ 309)
+// the value is left unchanged, since rounding to that many decimals would
+// otherwise yield NaN.
 func RuleRound(n int) Rule {
 	return Rule{ID: IDRound, Fn: func(v *float64) *Result {
 		if math.IsNaN(*v) || math.IsInf(*v, 0) {
@@ -248,6 +258,9 @@ func RuleRound(n int) Rule {
 			n = 0
 		}
 		shift := math.Pow(10, float64(n))
+		if math.IsInf(shift, 0) {
+			return nil
+		}
 		*v = math.Round(*v*shift) / shift
 		return nil
 	}}

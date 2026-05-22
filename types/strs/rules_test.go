@@ -145,12 +145,49 @@ func TestIsURL(t *testing.T) {
 	}
 }
 
+// TestIsURL_NilErrOnSchemeReject guards against the bug where a parsable URL
+// with a rejected scheme (data:, file:, javascript:) returned a Result with
+// Err: nil. Err should only be set when ParseRequestURI itself errored.
+func TestIsURL_NilErrOnSchemeReject(t *testing.T) {
+	s := "data:text/html,foo"
+	res := strs.RuleIsURL().Fn(&s)
+	if res == nil {
+		t.Fatal("data: scheme should be rejected")
+	}
+	if res.Err != nil {
+		t.Errorf("Err should be nil when scheme is rejected, got %v", res.Err)
+	}
+
+	s = "not a url at all"
+	res = strs.RuleIsURL().Fn(&s)
+	if res == nil {
+		t.Fatal("non-URL should be rejected")
+	}
+	if res.Err == nil {
+		t.Error("Err should be set when ParseRequestURI fails")
+	}
+}
+
 func TestIsNotURL(t *testing.T) {
 	if !run(strs.RuleIsNotURL(), "not-a-url") {
 		t.Error("non-URL should pass")
 	}
 	if run(strs.RuleIsNotURL(), "https://example.com") {
 		t.Error("valid URL should fail")
+	}
+}
+
+// TestIsNotURL_NoNilErr guards against setting Err: nil on the failure
+// path. RuleIsNotURL fails precisely when parsing succeeded, so err is
+// always nil — there is no useful Err to report.
+func TestIsNotURL_NoNilErr(t *testing.T) {
+	s := "https://example.com"
+	res := strs.RuleIsNotURL().Fn(&s)
+	if res == nil {
+		t.Fatal("valid URL should fail IsNotURL")
+	}
+	if res.Err != nil {
+		t.Errorf("Err should be nil on IsNotURL failure, got %v", res.Err)
 	}
 }
 

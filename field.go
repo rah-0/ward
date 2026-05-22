@@ -4,7 +4,7 @@ package ward
 // TypeID identifies which type package created the field. Each package's New()
 // function stamps this value on every rule automatically, so Validate() reads
 // TypeID from each Rule. Sanitizers mutate *Value in place — callers that need
-// to preserve the original should copy it before calling Run().
+// to preserve the original should copy it before calling Run(). Value must be non-nil
 type Field[T any] struct {
 	TypeID uint32
 	Name   string
@@ -16,15 +16,6 @@ type Field[T any] struct {
 var _ Check = (*Field[any])(nil)
 
 func (f *Field[T]) Validate() []*Result {
-	if err := f.Policy.Validate(); err != nil {
-		return []*Result{
-			{
-				FieldName: f.Name,
-				Err:       err,
-			},
-		}
-	}
-
 	var results []*Result
 	for _, r := range f.Rules {
 		res := r.Fn(f.Value)

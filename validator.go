@@ -25,7 +25,7 @@ func (v *Validate) Add(checks ...Check) *Validate {
 // Results are only stored for failing rules — passing rules produce no entries.
 // Returns the same Validate instance for chaining: ward.New().Add(...).Run()
 func (v *Validate) Run() *Validate {
-	v.results = v.results[:0]
+	v.results = nil
 	for _, check := range v.checks {
 		fieldResults := check.Validate()
 		v.results = append(v.results, fieldResults...)

@@ -7,11 +7,16 @@ import (
 )
 
 func makeField(value string, rules ...ward.Rule[string]) *ward.Field[string] {
+	stamped := make([]ward.Rule[string], len(rules))
+	copy(stamped, rules)
+	for i := range stamped {
+		stamped[i].TypeID = testTypeID
+	}
 	return &ward.Field[string]{
 		TypeID: testTypeID,
 		Name:   "field",
 		Value:  &value,
-		Rules:  rules,
+		Rules:  stamped,
 	}
 }
 
@@ -51,13 +56,21 @@ func TestValidatorRun_MultipleFields(t *testing.T) {
 }
 
 func TestValidatorRun_StopOnFail(t *testing.T) {
+	var subsequentCalls int
+	countingRule := ward.Rule[string]{ID: 4, Fn: func(s *string) *ward.Result {
+		subsequentCalls++
+		return &ward.Result{}
+	}}
 	v := ward.New()
 	v.Policy.StopOnFail = true
 	v.Add(makeField("bad", failingRule))
-	v.Add(makeField("bad", failingRule))
-	v.Add(makeField("bad", failingRule))
+	v.Add(makeField("bad", countingRule))
+	v.Add(makeField("bad", countingRule))
 	v.Run()
 	if len(v.Failures()) != 1 {
 		t.Fatalf("expected 1 failure with StopOnFail, got %d", len(v.Failures()))
+	}
+	if subsequentCalls != 0 {
+		t.Fatalf("expected 0 subsequent rule invocations after StopOnFail, got %d", subsequentCalls)
 	}
 }

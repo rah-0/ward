@@ -120,6 +120,23 @@ func TestMaxDecimalPlaces(t *testing.T) {
 	if !run(floats.RuleMaxDecimalPlaces(0), 5.0) {
 		t.Error("5.0 has 0 decimal places, should pass max=0")
 	}
+	// NaN / ±Inf must fail — they have no decimal representation.
+	if run(floats.RuleMaxDecimalPlaces(2), math.NaN()) {
+		t.Error("NaN should fail MaxDecimalPlaces")
+	}
+	if run(floats.RuleMaxDecimalPlaces(2), math.Inf(1)) {
+		t.Error("+Inf should fail MaxDecimalPlaces")
+	}
+	if run(floats.RuleMaxDecimalPlaces(2), math.Inf(-1)) {
+		t.Error("-Inf should fail MaxDecimalPlaces")
+	}
+	// Negative n is clamped to 0 — 1.5 has 1 decimal place, fails max=0.
+	if run(floats.RuleMaxDecimalPlaces(-1), 1.5) {
+		t.Error("MaxDecimalPlaces(-1) on 1.5 should fail (negative n clamped to 0)")
+	}
+	if !run(floats.RuleMaxDecimalPlaces(-1), 5.0) {
+		t.Error("MaxDecimalPlaces(-1) on 5.0 should pass (5.0 has 0 decimals)")
+	}
 }
 
 func TestOneOf(t *testing.T) {
@@ -249,6 +266,16 @@ func TestRound(t *testing.T) {
 	floats.RuleRound(2).Fn(&v)
 	if !math.IsInf(v, 1) {
 		t.Error("+Inf should be left unchanged")
+	}
+
+	// Large n that overflows 10^n to +Inf must not corrupt v to NaN.
+	v = 3.14
+	floats.RuleRound(400).Fn(&v)
+	if math.IsNaN(v) {
+		t.Error("Round(400) must not produce NaN")
+	}
+	if v != 3.14 {
+		t.Errorf("Round(400) should leave v unchanged when shift overflows, got %v", v)
 	}
 }
 

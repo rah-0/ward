@@ -30,6 +30,27 @@ func TestNew_SetsTypeID(t *testing.T) {
 	}
 }
 
+// TestNew_DoesNotMutateCallerSlice guards against the variadic backing-array
+// hazard: passing a []Rule via `rules...` must not leak New's TypeID stamping
+// back to the caller's slice.
+func TestNew_DoesNotMutateCallerSlice(t *testing.T) {
+	rules := []strs.Rule{strs.RuleNotEmpty(), strs.RuleLengthMin(3)}
+	for i, r := range rules {
+		if r.TypeID != 0 {
+			t.Fatalf("precondition: rules[%d].TypeID expected 0, got %d", i, r.TypeID)
+		}
+	}
+
+	s := "hello"
+	_ = strs.New("Email", &s, rules...)
+
+	for i, r := range rules {
+		if r.TypeID != 0 {
+			t.Errorf("rules[%d].TypeID was mutated by New: got %d, want 0", i, r.TypeID)
+		}
+	}
+}
+
 func TestValidate_PassThroughPointer(t *testing.T) {
 	s := "hello@example.com"
 	f := strs.New("Email", &s, strs.RuleIsEmail())
@@ -120,23 +141,6 @@ func TestValidate_FailingRule_SetsErr(t *testing.T) {
 	}
 	if results[0].Err == nil {
 		t.Error("expected Err to be set for IsEmail failure")
-	}
-}
-
-func TestValidate_PolicyError_BlocksRules(t *testing.T) {
-	s := "hello"
-	f := strs.New("Field", &s, strs.RuleNotEmpty())
-	f.Policy.Required = true
-	f.Policy.Optional = true
-	results := f.Validate()
-	if len(results) != 1 {
-		t.Fatalf("expected 1 policy error result, got %d", len(results))
-	}
-	if results[0].Err == nil {
-		t.Error("expected Err to be set on policy error")
-	}
-	if results[0].RuleID != 0 {
-		t.Error("expected RuleID to be zero — rule should not have run")
 	}
 }
 

@@ -110,9 +110,15 @@ func TestMultipleOf(t *testing.T) {
 	if run(ints.RuleMultipleOf(3), 7) {
 		t.Error("7 is not multiple of 3")
 	}
-	if run(ints.RuleMultipleOf(0), 5) {
-		t.Error("n=0 should always fail")
-	}
+}
+
+func TestMultipleOf_PanicsOnZero(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("RuleMultipleOf(0) should panic")
+		}
+	}()
+	ints.RuleMultipleOf(0)
 }
 
 func TestOneOf(t *testing.T) {

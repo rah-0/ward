@@ -122,9 +122,13 @@ func RulePositiveOrZero() Rule {
 }
 
 // RuleMultipleOf passes when v is evenly divisible by n.
+// Panics if n == 0, since "multiple of 0" is never a sensible runtime constraint.
 func RuleMultipleOf(n int64) Rule {
+	if n == 0 {
+		panic("ints.RuleMultipleOf: n must be non-zero")
+	}
 	return Rule{ID: IDMultipleOf, Fn: func(v *int64) *Result {
-		if n != 0 && *v%n == 0 {
+		if *v%n == 0 {
 			return nil
 		}
 		return &Result{Arg1: n}

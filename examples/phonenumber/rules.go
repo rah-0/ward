@@ -14,11 +14,17 @@ const (
 	IDDigitsOnly     uint32 = 5
 )
 
-var IDs = []uint32{
-	IDHasCountryCode,
-	IDHasNumber,
-	IDValidLength,
-	IDDigitsOnly,
+// IDs maps every rule ID in this package to its name.
+var IDs = map[uint32]string{
+	IDHasCountryCode: "HasCountryCode",
+	IDHasNumber:      "HasNumber",
+	IDValidLength:    "ValidLength",
+	IDDigitsOnly:     "DigitsOnly",
+}
+
+// IDsAdd registers a custom rule name and returns its automatically assigned ID.
+func IDsAdd(name string) uint32 {
+	return ward.IDsAdd(IDs, name)
 }
 
 func RuleHasCountryCode() Rule {

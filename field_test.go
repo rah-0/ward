@@ -8,17 +8,26 @@ import (
 
 const testTypeID uint32 = 99
 
+// Rules are declared without TypeID — the type-package New() constructors are
+// responsible for stamping TypeID on each rule, and the test helpers below
+// mirror that contract. Setting TypeID on a rule literal is meaningless in
+// real use because every constructor overwrites it.
 var (
-	passingRule = ward.Rule[string]{TypeID: testTypeID, ID: 1, Fn: func(s *string) *ward.Result { return nil }}
-	failingRule = ward.Rule[string]{TypeID: testTypeID, ID: 2, Fn: func(s *string) *ward.Result { return &ward.Result{Arg1: *s} }}
+	passingRule = ward.Rule[string]{ID: 2, Fn: func(s *string) *ward.Result { return nil }}
+	failingRule = ward.Rule[string]{ID: 3, Fn: func(s *string) *ward.Result { return &ward.Result{Arg1: *s} }}
 )
 
 func newStringField(name string, value string, rules ...ward.Rule[string]) *ward.Field[string] {
+	stamped := make([]ward.Rule[string], len(rules))
+	copy(stamped, rules)
+	for i := range stamped {
+		stamped[i].TypeID = testTypeID
+	}
 	f := &ward.Field[string]{
 		TypeID: testTypeID,
 		Name:   name,
 		Value:  &value,
-		Rules:  rules,
+		Rules:  stamped,
 	}
 	return f
 }
@@ -76,18 +85,5 @@ func TestFieldValidate_MixedRules(t *testing.T) {
 	results := f.Validate()
 	if len(results) != 1 {
 		t.Fatalf("expected 1 failure, got %d", len(results))
-	}
-}
-
-func TestFieldValidate_PolicyError(t *testing.T) {
-	f := newStringField("email", "test", passingRule)
-	f.Policy.Required = true
-	f.Policy.Optional = true
-	results := f.Validate()
-	if len(results) != 1 {
-		t.Fatalf("expected 1 policy error, got %d", len(results))
-	}
-	if results[0].Err == nil {
-		t.Fatal("expected Err to be set on policy error result")
 	}
 }

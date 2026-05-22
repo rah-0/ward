@@ -188,3 +188,63 @@ func TestNotOneOfV4_RejectsMalformed(t *testing.T) {
 		t.Error("malformed input should fail NotOneOfV4")
 	}
 }
+
+// -----------------------------------------------------------------------------
+// RuleOneOf (version-agnostic)
+// -----------------------------------------------------------------------------
+
+func TestOneOf_AcceptsMemberAnyVersion(t *testing.T) {
+	if !run(uuids.RuleOneOf(validV1, validV4_1, validV7), validV1) {
+		t.Error("v1 member should pass OneOf")
+	}
+	if !run(uuids.RuleOneOf(validV1, validV4_1, validV7), validV4_1) {
+		t.Error("v4 member should pass OneOf")
+	}
+	if !run(uuids.RuleOneOf(validV1, validV4_1, validV7), validV7) {
+		t.Error("v7 member should pass OneOf")
+	}
+}
+
+func TestOneOf_RejectsNonMember(t *testing.T) {
+	if run(uuids.RuleOneOf(validV4_1, validV4_2), validV4_3) {
+		t.Error("non-member should fail OneOf")
+	}
+}
+
+func TestOneOf_RejectsMalformed(t *testing.T) {
+	if run(uuids.RuleOneOf(validV4_1), "not-a-uuid") {
+		t.Error("malformed input should fail OneOf")
+	}
+}
+
+func TestOneOf_AllowsV1InAllowedList(t *testing.T) {
+	// In OneOfV4, a v1 in the allowed list is dropped; in OneOf, it's kept.
+	if !run(uuids.RuleOneOf(validV1), validV1) {
+		t.Error("v1 should match a v1 entry under OneOf")
+	}
+}
+
+// -----------------------------------------------------------------------------
+// RuleNotOneOf (version-agnostic)
+// -----------------------------------------------------------------------------
+
+func TestNotOneOf_AcceptsNonMemberAnyVersion(t *testing.T) {
+	if !run(uuids.RuleNotOneOf(validV4_1, validV4_2), validV1) {
+		t.Error("v1 non-member should pass NotOneOf")
+	}
+	if !run(uuids.RuleNotOneOf(validV4_1, validV4_2), validV7) {
+		t.Error("v7 non-member should pass NotOneOf")
+	}
+}
+
+func TestNotOneOf_RejectsMember(t *testing.T) {
+	if run(uuids.RuleNotOneOf(validV4_1, validV4_2), validV4_1) {
+		t.Error("member should fail NotOneOf")
+	}
+}
+
+func TestNotOneOf_RejectsMalformed(t *testing.T) {
+	if run(uuids.RuleNotOneOf(validV4_1), "not-a-uuid") {
+		t.Error("malformed input should fail NotOneOf")
+	}
+}
