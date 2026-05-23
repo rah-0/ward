@@ -190,3 +190,48 @@ func TestIsWeekend(t *testing.T) {
 		t.Error("Monday should fail IsWeekend")
 	}
 }
+
+func TestIsToday(t *testing.T) {
+	now := time.Now()
+	if !run(times.RuleIsToday(), now) {
+		t.Error("time.Now() should pass IsToday")
+	}
+	// noon today in the local zone
+	y, m, d := now.Date()
+	noon := time.Date(y, m, d, 12, 0, 0, 0, now.Location())
+	if !run(times.RuleIsToday(), noon) {
+		t.Error("noon today should pass IsToday")
+	}
+	if run(times.RuleIsToday(), now.AddDate(0, 0, -1)) {
+		t.Error("yesterday should fail IsToday")
+	}
+	if run(times.RuleIsToday(), now.AddDate(0, 0, 1)) {
+		t.Error("tomorrow should fail IsToday")
+	}
+}
+
+func TestIsYesterday(t *testing.T) {
+	now := time.Now()
+	if !run(times.RuleIsYesterday(), now.AddDate(0, 0, -1)) {
+		t.Error("24h ago should pass IsYesterday")
+	}
+	if run(times.RuleIsYesterday(), now) {
+		t.Error("now should fail IsYesterday")
+	}
+	if run(times.RuleIsYesterday(), now.AddDate(0, 0, -2)) {
+		t.Error("two days ago should fail IsYesterday")
+	}
+}
+
+func TestIsTomorrow(t *testing.T) {
+	now := time.Now()
+	if !run(times.RuleIsTomorrow(), now.AddDate(0, 0, 1)) {
+		t.Error("24h from now should pass IsTomorrow")
+	}
+	if run(times.RuleIsTomorrow(), now) {
+		t.Error("now should fail IsTomorrow")
+	}
+	if run(times.RuleIsTomorrow(), now.AddDate(0, 0, 2)) {
+		t.Error("two days from now should fail IsTomorrow")
+	}
+}

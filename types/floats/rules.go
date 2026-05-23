@@ -31,6 +31,11 @@ const (
 	IDCeil               uint32 = 20
 	IDClamp              uint32 = 21
 	IDAbs                uint32 = 22
+	IDIsNumber           uint32 = 23
+	IDApproxEqual        uint32 = 24
+	IDClampMin           uint32 = 25
+	IDClampMax           uint32 = 26
+	IDTrunc              uint32 = 27
 )
 
 // IDs maps every rule ID in this package to its name.
@@ -56,6 +61,11 @@ var IDs = map[uint32]string{
 	IDCeil:               "Ceil",
 	IDClamp:              "Clamp",
 	IDAbs:                "Abs",
+	IDIsNumber:           "IsNumber",
+	IDApproxEqual:        "ApproxEqual",
+	IDClampMin:           "ClampMin",
+	IDClampMax:           "ClampMax",
+	IDTrunc:              "Trunc",
 }
 
 // IDsAdd registers a custom rule name and returns its automatically assigned ID.
@@ -148,12 +158,12 @@ func RuleIsFinite() Rule {
 // NaN and ±Inf fail (they have no decimal representation). Negative n is
 // treated as 0, matching RuleRound.
 func RuleMaxDecimalPlaces(n int) Rule {
+	if n < 0 {
+		n = 0
+	}
 	return Rule{ID: IDMaxDecimalPlaces, Fn: func(v *float64) *Result {
 		if math.IsNaN(*v) || math.IsInf(*v, 0) {
 			return &Result{Arg1: n}
-		}
-		if n < 0 {
-			n = 0
 		}
 		s := strconv.FormatFloat(*v, 'f', -1, 64)
 		if idx := strings.Index(s, "."); idx != -1 {
@@ -240,6 +250,35 @@ func RuleIsInf() Rule {
 	}}
 }
 
+// RuleIsNumber passes when v is not NaN. ±Inf passes — use RuleIsFinite
+// to reject both NaN and ±Inf.
+func RuleIsNumber() Rule {
+	return Rule{ID: IDIsNumber, Fn: func(v *float64) *Result {
+		if !math.IsNaN(*v) {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleApproxEqual passes when |v - target| <= tolerance. Negative tolerance
+// is treated as 0 (exact equality). NaN inputs always fail (NaN compares
+// unequal to everything, including itself).
+func RuleApproxEqual(target, tolerance float64) Rule {
+	if tolerance < 0 {
+		tolerance = 0
+	}
+	return Rule{ID: IDApproxEqual, Fn: func(v *float64) *Result {
+		if math.IsNaN(*v) || math.IsNaN(target) {
+			return &Result{Arg1: target, Arg2: tolerance}
+		}
+		if math.Abs(*v-target) <= tolerance {
+			return nil
+		}
+		return &Result{Arg1: target, Arg2: tolerance}
+	}}
+}
+
 // -----------------------------------------------------------------------------
 // Sanitizers — the following rules mutate *v
 // -----------------------------------------------------------------------------
@@ -250,14 +289,14 @@ func RuleIsInf() Rule {
 // the value is left unchanged, since rounding to that many decimals would
 // otherwise yield NaN.
 func RuleRound(n int) Rule {
+	if n < 0 {
+		n = 0
+	}
+	shift := math.Pow(10, float64(n))
 	return Rule{ID: IDRound, Fn: func(v *float64) *Result {
 		if math.IsNaN(*v) || math.IsInf(*v, 0) {
 			return nil
 		}
-		if n < 0 {
-			n = 0
-		}
-		shift := math.Pow(10, float64(n))
 		if math.IsInf(shift, 0) {
 			return nil
 		}
@@ -302,6 +341,43 @@ func RuleClamp(min, max float64) Rule {
 func RuleAbs() Rule {
 	return Rule{ID: IDAbs, Fn: func(v *float64) *Result {
 		*v = math.Abs(*v)
+		return nil
+	}}
+}
+
+// RuleClampMin is a sanitizer that raises *v to min if it is below.
+// NaN is left unchanged.
+func RuleClampMin(min float64) Rule {
+	return Rule{ID: IDClampMin, Fn: func(v *float64) *Result {
+		if math.IsNaN(*v) {
+			return nil
+		}
+		if *v < min {
+			*v = min
+		}
+		return nil
+	}}
+}
+
+// RuleClampMax is a sanitizer that lowers *v to max if it is above.
+// NaN is left unchanged.
+func RuleClampMax(max float64) Rule {
+	return Rule{ID: IDClampMax, Fn: func(v *float64) *Result {
+		if math.IsNaN(*v) {
+			return nil
+		}
+		if *v > max {
+			*v = max
+		}
+		return nil
+	}}
+}
+
+// RuleTrunc is a sanitizer that replaces *v with math.Trunc(*v) — its
+// integer part toward zero. NaN and ±Inf are left unchanged by math.Trunc.
+func RuleTrunc() Rule {
+	return Rule{ID: IDTrunc, Fn: func(v *float64) *Result {
+		*v = math.Trunc(*v)
 		return nil
 	}}
 }

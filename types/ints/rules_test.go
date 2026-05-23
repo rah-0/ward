@@ -112,13 +112,14 @@ func TestMultipleOf(t *testing.T) {
 	}
 }
 
-func TestMultipleOf_PanicsOnZero(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Fatal("RuleMultipleOf(0) should panic")
+// MultipleOf(0) is a no-op — every value passes, matching the convention
+// used by RuleClamp for nonsensical arguments.
+func TestMultipleOf_ZeroIsNoOp(t *testing.T) {
+	for _, v := range []int64{0, 1, -1, 7, -7} {
+		if !run(ints.RuleMultipleOf(0), v) {
+			t.Errorf("MultipleOf(0) should pass for %d", v)
 		}
-	}()
-	ints.RuleMultipleOf(0)
+	}
 }
 
 func TestOneOf(t *testing.T) {
@@ -269,5 +270,30 @@ func TestAbs(t *testing.T) {
 	ints.RuleAbs().Fn(&v)
 	if v != -1<<63 {
 		t.Errorf("MinInt64 should be left as-is, got %d", v)
+	}
+}
+
+func TestIsPort(t *testing.T) {
+	for _, v := range []int64{1, 80, 443, 8080, 65535} {
+		if !run(ints.RuleIsPort(), v) {
+			t.Errorf("%d should pass IsPort", v)
+		}
+	}
+	for _, v := range []int64{0, -1, 65536, 100000, -65535} {
+		if run(ints.RuleIsPort(), v) {
+			t.Errorf("%d should fail IsPort", v)
+		}
+	}
+}
+
+func TestIsNonZero(t *testing.T) {
+	if !run(ints.RuleIsNonZero(), 1) {
+		t.Error("1 should pass IsNonZero")
+	}
+	if !run(ints.RuleIsNonZero(), -1) {
+		t.Error("-1 should pass IsNonZero")
+	}
+	if run(ints.RuleIsNonZero(), 0) {
+		t.Error("0 should fail IsNonZero")
 	}
 }

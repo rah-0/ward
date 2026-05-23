@@ -21,6 +21,9 @@ const (
 	IDIsFuture      uint32 = 12
 	IDIsWeekday     uint32 = 13
 	IDIsWeekend     uint32 = 14
+	IDIsToday       uint32 = 15
+	IDIsYesterday   uint32 = 16
+	IDIsTomorrow    uint32 = 17
 )
 
 // IDs maps every rule ID in this package to its name.
@@ -38,6 +41,9 @@ var IDs = map[uint32]string{
 	IDIsFuture:      "IsFuture",
 	IDIsWeekday:     "IsWeekday",
 	IDIsWeekend:     "IsWeekend",
+	IDIsToday:       "IsToday",
+	IDIsYesterday:   "IsYesterday",
+	IDIsTomorrow:    "IsTomorrow",
 }
 
 // IDsAdd registers a custom rule name and returns its automatically assigned ID.
@@ -177,6 +183,47 @@ func RuleIsWeekend() Rule {
 	return Rule{ID: IDIsWeekend, Fn: func(v *time.Time) *Result {
 		d := v.Weekday()
 		if d == time.Saturday || d == time.Sunday {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// sameDay reports whether a and b fall on the same calendar date in loc.
+func sameDay(a, b time.Time, loc *time.Location) bool {
+	ay, am, ad := a.In(loc).Date()
+	by, bm, bd := b.In(loc).Date()
+	return ay == by && am == bm && ad == bd
+}
+
+// RuleIsToday passes when v falls on the same calendar date as time.Now()
+// in v's own location. Comparison uses time.Now() so the answer can shift
+// as wall time crosses midnight.
+func RuleIsToday() Rule {
+	return Rule{ID: IDIsToday, Fn: func(v *time.Time) *Result {
+		if sameDay(*v, time.Now(), v.Location()) {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleIsYesterday passes when v falls on the calendar date one day before
+// time.Now() in v's own location.
+func RuleIsYesterday() Rule {
+	return Rule{ID: IDIsYesterday, Fn: func(v *time.Time) *Result {
+		if sameDay(*v, time.Now().AddDate(0, 0, -1), v.Location()) {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleIsTomorrow passes when v falls on the calendar date one day after
+// time.Now() in v's own location.
+func RuleIsTomorrow() Rule {
+	return Rule{ID: IDIsTomorrow, Fn: func(v *time.Time) *Result {
+		if sameDay(*v, time.Now().AddDate(0, 0, 1), v.Location()) {
 			return nil
 		}
 		return &Result{}

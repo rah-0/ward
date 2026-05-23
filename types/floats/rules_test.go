@@ -356,3 +356,264 @@ func TestAbs(t *testing.T) {
 		t.Errorf("zero unchanged, got %v", v)
 	}
 }
+
+func TestIsNumber(t *testing.T) {
+	if !run(floats.RuleIsNumber(), 1.0) {
+		t.Error("1.0 should pass IsNumber")
+	}
+	if !run(floats.RuleIsNumber(), math.Inf(1)) {
+		t.Error("+Inf should pass IsNumber")
+	}
+	if !run(floats.RuleIsNumber(), math.Inf(-1)) {
+		t.Error("-Inf should pass IsNumber")
+	}
+	if run(floats.RuleIsNumber(), math.NaN()) {
+		t.Error("NaN should fail IsNumber")
+	}
+}
+
+func TestApproxEqual(t *testing.T) {
+	if !run(floats.RuleApproxEqual(1.0, 0.01), 1.005) {
+		t.Error("1.005 should be within 0.01 of 1.0")
+	}
+	if !run(floats.RuleApproxEqual(1.0, 0.0), 1.0) {
+		t.Error("exact equality with zero tolerance should pass")
+	}
+	if run(floats.RuleApproxEqual(1.0, 0.01), 1.1) {
+		t.Error("1.1 should not be within 0.01 of 1.0")
+	}
+	// negative tolerance treated as 0 (exact)
+	if !run(floats.RuleApproxEqual(1.0, -1.0), 1.0) {
+		t.Error("negative tolerance should be treated as 0 — exact match should pass")
+	}
+	if run(floats.RuleApproxEqual(1.0, -1.0), 1.0001) {
+		t.Error("negative tolerance should be treated as 0 — non-exact should fail")
+	}
+	// NaN always fails
+	if run(floats.RuleApproxEqual(1.0, 0.01), math.NaN()) {
+		t.Error("NaN input should fail ApproxEqual")
+	}
+	if run(floats.RuleApproxEqual(math.NaN(), 0.01), 1.0) {
+		t.Error("NaN target should fail ApproxEqual")
+	}
+}
+
+func TestClampMinFloat(t *testing.T) {
+	v := 5.0
+	floats.RuleClampMin(0.0).Fn(&v)
+	if v != 5.0 {
+		t.Errorf("above min should be unchanged, got %v", v)
+	}
+	v = -10.0
+	floats.RuleClampMin(0.0).Fn(&v)
+	if v != 0.0 {
+		t.Errorf("below min should be raised, got %v", v)
+	}
+	// NaN unchanged
+	v = math.NaN()
+	floats.RuleClampMin(0.0).Fn(&v)
+	if !math.IsNaN(v) {
+		t.Error("NaN should be left unchanged by ClampMin")
+	}
+}
+
+func TestClampMaxFloat(t *testing.T) {
+	v := 5.0
+	floats.RuleClampMax(10.0).Fn(&v)
+	if v != 5.0 {
+		t.Errorf("below max should be unchanged, got %v", v)
+	}
+	v = 100.0
+	floats.RuleClampMax(10.0).Fn(&v)
+	if v != 10.0 {
+		t.Errorf("above max should be lowered, got %v", v)
+	}
+	// NaN unchanged
+	v = math.NaN()
+	floats.RuleClampMax(10.0).Fn(&v)
+	if !math.IsNaN(v) {
+		t.Error("NaN should be left unchanged by ClampMax")
+	}
+}
+
+func TestTrunc(t *testing.T) {
+	v := 1.7
+	floats.RuleTrunc().Fn(&v)
+	if v != 1.0 {
+		t.Errorf("expected 1.0, got %v", v)
+	}
+	v = -1.7
+	floats.RuleTrunc().Fn(&v)
+	if v != -1.0 {
+		t.Errorf("expected -1.0 (toward zero), got %v", v)
+	}
+	v = 0.0
+	floats.RuleTrunc().Fn(&v)
+	if v != 0.0 {
+		t.Errorf("zero unchanged, got %v", v)
+	}
+}
+
+// -----------------------------------------------------------------------------
+// Reusability / closure-state regressions
+//
+// These tests guard against a class of bug where a rule constructor accepts
+// an argument that needs normalization (e.g. negative tolerance, negative n)
+// and the closure mutates the captured parameter on the first call. After
+// that first call, the rule reports the *normalized* value back in Arg1/Arg2
+// rather than the value the user originally supplied — and concurrent use
+// becomes a data race. Each test invokes a single Rule value multiple times
+// and asserts the reported Args remain equal to the constructor arguments.
+// -----------------------------------------------------------------------------
+
+// TestApproxEqual_ReusableAcrossCalls: negative tolerance is normalized to 0
+// at construction time. Arg2 must report the *effective* tolerance, and that
+// value must be identical on every invocation regardless of which code path
+// the call takes.
+func TestApproxEqual_ReusableAcrossCalls(t *testing.T) {
+	rule := floats.RuleApproxEqual(1.0, -1.0)
+
+	// Failure path with NaN — exercises the early-return arm.
+	v := math.NaN()
+	r1 := rule.Fn(&v)
+	if r1 == nil {
+		t.Fatal("NaN should fail ApproxEqual")
+	}
+
+	// Successful non-NaN path — under the old bug, this call rewrote the
+	// captured tolerance to 0, contaminating subsequent failure reports.
+	v = 1.0
+	if rule.Fn(&v) != nil {
+		t.Fatal("exact match with negative tolerance should pass")
+	}
+
+	// Failure path again — Arg2 must equal the value seen on the first call.
+	v = math.NaN()
+	r3 := rule.Fn(&v)
+	if r3 == nil {
+		t.Fatal("NaN should fail ApproxEqual on second call")
+	}
+	if r1.Arg2 != r3.Arg2 {
+		t.Errorf("Arg2 differs across calls (closure mutation): %v vs %v", r1.Arg2, r3.Arg2)
+	}
+	if r3.Arg2 != 0.0 {
+		t.Errorf("Arg2 should report the normalized tolerance 0, got %v", r3.Arg2)
+	}
+
+	// Failure on the non-NaN compare path — Arg2 must match the others.
+	v = 5.0
+	r4 := rule.Fn(&v)
+	if r4 == nil {
+		t.Fatal("5.0 should fail ApproxEqual(target=1.0, tolerance=-1.0)")
+	}
+	if r4.Arg2 != r1.Arg2 {
+		t.Errorf("Arg2 on compare-fail path differs: %v vs %v", r4.Arg2, r1.Arg2)
+	}
+}
+
+// TestApproxEqual_PositiveTolerancePreserved guards the simple case where
+// no normalization happens — Arg1/Arg2 must equal the user-supplied target
+// and tolerance exactly, even after many calls.
+func TestApproxEqual_PositiveTolerancePreserved(t *testing.T) {
+	rule := floats.RuleApproxEqual(1.0, 0.5)
+
+	for i := 0; i < 5; i++ {
+		v := 1.2
+		if rule.Fn(&v) != nil {
+			t.Fatalf("iter %d: 1.2 within 0.5 of 1.0 should pass", i)
+		}
+		v = 5.0
+		r := rule.Fn(&v)
+		if r == nil {
+			t.Fatalf("iter %d: 5.0 should fail", i)
+		}
+		if r.Arg1 != 1.0 || r.Arg2 != 0.5 {
+			t.Errorf("iter %d: expected Arg1=1.0 Arg2=0.5, got Arg1=%v Arg2=%v", i, r.Arg1, r.Arg2)
+		}
+	}
+}
+
+func TestMaxDecimalPlaces_ReusableAcrossCalls(t *testing.T) {
+	rule := floats.RuleMaxDecimalPlaces(-1)
+
+	// Failure on NaN — exercises the early-return arm before normalization.
+	v := math.NaN()
+	r1 := rule.Fn(&v)
+	if r1 == nil {
+		t.Fatal("NaN should fail MaxDecimalPlaces")
+	}
+
+	// Path that previously wrote n = 0 into the closure (any non-NaN/Inf input
+	// reaches the normalization branch).
+	v = 5.0
+	if rule.Fn(&v) != nil {
+		t.Fatal("integer should pass MaxDecimalPlaces(-1)")
+	}
+
+	// Now NaN again — Arg1 must still match the original n = -1.
+	v = math.NaN()
+	r3 := rule.Fn(&v)
+	if r3 == nil {
+		t.Fatal("NaN should fail MaxDecimalPlaces on second call")
+	}
+	if r1.Arg1 != r3.Arg1 {
+		t.Errorf("Arg1 differs across calls (closure mutation): %v vs %v", r1.Arg1, r3.Arg1)
+	}
+	if r3.Arg1 != 0 {
+		// Negative n is normalized to 0 by spec; both calls should see 0.
+		t.Errorf("Arg1 should be normalized to 0, got %v", r3.Arg1)
+	}
+
+	// Failure on the fractional path — Arg1 must still match.
+	v = 1.5
+	r4 := rule.Fn(&v)
+	if r4 == nil {
+		t.Fatal("1.5 should fail MaxDecimalPlaces(0)")
+	}
+	if r4.Arg1 != 0 {
+		t.Errorf("Arg1 on fractional-fail path should be 0, got %v", r4.Arg1)
+	}
+}
+
+// TestApproxEqual_ConcurrentReuse runs the same rule from many goroutines
+// to flag any data race introduced by closure-state mutation. With -race,
+// any concurrent write to a shared closure variable would fail the run.
+func TestApproxEqual_ConcurrentReuse(t *testing.T) {
+	rule := floats.RuleApproxEqual(1.0, -1.0)
+
+	const goroutines = 32
+	const iterations = 1000
+	done := make(chan struct{}, goroutines)
+	for g := 0; g < goroutines; g++ {
+		go func() {
+			for i := 0; i < iterations; i++ {
+				v := 1.0
+				rule.Fn(&v)
+			}
+			done <- struct{}{}
+		}()
+	}
+	for g := 0; g < goroutines; g++ {
+		<-done
+	}
+}
+
+func TestMaxDecimalPlaces_ConcurrentReuse(t *testing.T) {
+	rule := floats.RuleMaxDecimalPlaces(-1)
+
+	const goroutines = 32
+	const iterations = 1000
+	done := make(chan struct{}, goroutines)
+	for g := 0; g < goroutines; g++ {
+		go func() {
+			for i := 0; i < iterations; i++ {
+				v := 1.5
+				rule.Fn(&v)
+			}
+			done <- struct{}{}
+		}()
+	}
+	for g := 0; g < goroutines; g++ {
+		<-done
+	}
+}

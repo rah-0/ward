@@ -17,6 +17,15 @@ const (
 	IDPositiveOrZero     uint32 = 8
 	IDOneOf              uint32 = 9
 	IDNotOneOf           uint32 = 10
+	IDNegative           uint32 = 11
+	IDNegativeOrZero     uint32 = 12
+	IDMultipleOf         uint32 = 13
+	IDClamp              uint32 = 14
+	IDClampMin           uint32 = 15
+	IDClampMax           uint32 = 16
+	IDAbs                uint32 = 17
+	IDRound              uint32 = 18
+	IDTruncate           uint32 = 19
 )
 
 // IDs maps every rule ID in this package to its name.
@@ -30,6 +39,15 @@ var IDs = map[uint32]string{
 	IDPositiveOrZero:     "PositiveOrZero",
 	IDOneOf:              "OneOf",
 	IDNotOneOf:           "NotOneOf",
+	IDNegative:           "Negative",
+	IDNegativeOrZero:     "NegativeOrZero",
+	IDMultipleOf:         "MultipleOf",
+	IDClamp:              "Clamp",
+	IDClampMin:           "ClampMin",
+	IDClampMax:           "ClampMax",
+	IDAbs:                "Abs",
+	IDRound:              "Round",
+	IDTruncate:           "Truncate",
 }
 
 // IDsAdd registers a custom rule name and returns its automatically assigned ID.
@@ -127,6 +145,116 @@ func RuleNotOneOf(excluded ...time.Duration) Rule {
 				return &Result{Arg1: excluded}
 			}
 		}
+		return nil
+	}}
+}
+
+// RuleNegative passes when v < 0.
+func RuleNegative() Rule {
+	return Rule{ID: IDNegative, Fn: func(v *time.Duration) *Result {
+		if *v < 0 {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleNegativeOrZero passes when v <= 0.
+func RuleNegativeOrZero() Rule {
+	return Rule{ID: IDNegativeOrZero, Fn: func(v *time.Duration) *Result {
+		if *v <= 0 {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleMultipleOf passes when v is an integer multiple of n.
+// n == 0 is a no-op (always passes), matching the no-op convention used
+// by RuleClamp for nonsensical arguments.
+func RuleMultipleOf(n time.Duration) Rule {
+	return Rule{ID: IDMultipleOf, Fn: func(v *time.Duration) *Result {
+		if n == 0 {
+			return nil
+		}
+		if *v%n == 0 {
+			return nil
+		}
+		return &Result{Arg1: n}
+	}}
+}
+
+// -----------------------------------------------------------------------------
+// Sanitizers — the following rules mutate *v
+// -----------------------------------------------------------------------------
+
+// RuleClamp is a sanitizer that clamps *v into the inclusive range [min, max].
+// If min > max, the rule is a no-op to avoid producing nonsensical results.
+func RuleClamp(min, max time.Duration) Rule {
+	return Rule{ID: IDClamp, Fn: func(v *time.Duration) *Result {
+		if min > max {
+			return nil
+		}
+		if *v < min {
+			*v = min
+		} else if *v > max {
+			*v = max
+		}
+		return nil
+	}}
+}
+
+// RuleClampMin is a sanitizer that raises *v to min if it is below.
+func RuleClampMin(min time.Duration) Rule {
+	return Rule{ID: IDClampMin, Fn: func(v *time.Duration) *Result {
+		if *v < min {
+			*v = min
+		}
+		return nil
+	}}
+}
+
+// RuleClampMax is a sanitizer that lowers *v to max if it is above.
+func RuleClampMax(max time.Duration) Rule {
+	return Rule{ID: IDClampMax, Fn: func(v *time.Duration) *Result {
+		if *v > max {
+			*v = max
+		}
+		return nil
+	}}
+}
+
+// RuleAbs is a sanitizer that replaces *v with its absolute value.
+// math.MinInt64 nanoseconds has no positive counterpart and is left unchanged.
+func RuleAbs() Rule {
+	return Rule{ID: IDAbs, Fn: func(v *time.Duration) *Result {
+		if *v < 0 && *v != time.Duration(-1<<63) {
+			*v = -*v
+		}
+		return nil
+	}}
+}
+
+// RuleRound is a sanitizer that rounds *v to the nearest multiple of m using
+// time.Duration.Round (half-away-from-zero). m <= 0 is a no-op.
+func RuleRound(m time.Duration) Rule {
+	return Rule{ID: IDRound, Fn: func(v *time.Duration) *Result {
+		if m <= 0 {
+			return nil
+		}
+		*v = v.Round(m)
+		return nil
+	}}
+}
+
+// RuleTruncate is a sanitizer that rounds *v toward zero to a multiple of m
+// using time.Duration.Truncate. m <= 0 is a no-op.
+func RuleTruncate(m time.Duration) Rule {
+	return Rule{ID: IDTruncate, Fn: func(v *time.Duration) *Result {
+		if m <= 0 {
+			return nil
+		}
+		*v = v.Truncate(m)
 		return nil
 	}}
 }

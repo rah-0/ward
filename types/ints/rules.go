@@ -22,6 +22,8 @@ const (
 	IDClampMin           uint32 = 17
 	IDClampMax           uint32 = 18
 	IDAbs                uint32 = 19
+	IDIsPort             uint32 = 20
+	IDIsNonZero          uint32 = 21
 )
 
 // IDs maps every rule ID in this package to its name.
@@ -44,6 +46,8 @@ var IDs = map[uint32]string{
 	IDClampMin:           "ClampMin",
 	IDClampMax:           "ClampMax",
 	IDAbs:                "Abs",
+	IDIsPort:             "IsPort",
+	IDIsNonZero:          "IsNonZero",
 }
 
 // IDsAdd registers a custom rule name and returns its automatically assigned ID.
@@ -122,12 +126,13 @@ func RulePositiveOrZero() Rule {
 }
 
 // RuleMultipleOf passes when v is evenly divisible by n.
-// Panics if n == 0, since "multiple of 0" is never a sensible runtime constraint.
+// n == 0 is a no-op (always passes), matching the no-op convention used
+// by RuleClamp for nonsensical arguments.
 func RuleMultipleOf(n int64) Rule {
-	if n == 0 {
-		panic("ints.RuleMultipleOf: n must be non-zero")
-	}
 	return Rule{ID: IDMultipleOf, Fn: func(v *int64) *Result {
+		if n == 0 {
+			return nil
+		}
 		if *v%n == 0 {
 			return nil
 		}
@@ -193,6 +198,28 @@ func RuleIsEven() Rule {
 func RuleIsOdd() Rule {
 	return Rule{ID: IDIsOdd, Fn: func(v *int64) *Result {
 		if *v%2 != 0 {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleIsPort passes when v is a valid TCP/UDP port number in [1, 65535].
+// Port 0 is rejected because it is not a valid bind target in practice
+// (it means "any free port" to the OS, not a real port).
+func RuleIsPort() Rule {
+	return Rule{ID: IDIsPort, Fn: func(v *int64) *Result {
+		if *v >= 1 && *v <= 65535 {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleIsNonZero passes when v != 0.
+func RuleIsNonZero() Rule {
+	return Rule{ID: IDIsNonZero, Fn: func(v *int64) *Result {
+		if *v != 0 {
 			return nil
 		}
 		return &Result{}

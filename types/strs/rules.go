@@ -9,6 +9,7 @@ import (
 	"net/mail"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -60,6 +61,14 @@ const (
 	IDToUpper          uint32 = 43
 	IDStripHTMLTags    uint32 = 44
 	IDIsUUID           uint32 = 45
+	IDIsHex            uint32 = 46
+	IDIsHexColor       uint32 = 47
+	IDIsSha256         uint32 = 48
+	IDIsMACAddress     uint32 = 49
+	IDIsCIDR           uint32 = 50
+	IDIsPort           uint32 = 51
+	IDIsSlug           uint32 = 52
+	IDIsDataURI        uint32 = 53
 )
 
 // IDs maps every rule ID in this package to its name.
@@ -108,6 +117,14 @@ var IDs = map[uint32]string{
 	IDToUpper:          "ToUpper",
 	IDStripHTMLTags:    "StripHTMLTags",
 	IDIsUUID:           "IsUUID",
+	IDIsHex:            "IsHex",
+	IDIsHexColor:       "IsHexColor",
+	IDIsSha256:         "IsSha256",
+	IDIsMACAddress:     "IsMACAddress",
+	IDIsCIDR:           "IsCIDR",
+	IDIsPort:           "IsPort",
+	IDIsSlug:           "IsSlug",
+	IDIsDataURI:        "IsDataURI",
 }
 
 // IDsAdd registers a custom rule name and returns its automatically assigned ID.
@@ -586,5 +603,106 @@ func RuleIsUUID() Rule {
 			return &Result{}
 		}
 		return nil
+	}}
+}
+
+// RuleIsHex passes when *s is a non-empty string of hexadecimal digits
+// (0-9, a-f, A-F). It does not require a fixed length or a "0x" prefix —
+// use RuleLengthExact alongside it when a specific byte width is needed.
+func RuleIsHex() Rule {
+	return Rule{ID: IDIsHex, Fn: func(s *string) *Result {
+		if RegexpHex.MatchString(*s) {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleIsHexColor passes when *s is a CSS-style hex colour: a leading '#'
+// followed by 3, 6, or 8 hex digits (RGB, RRGGBB, or RRGGBBAA).
+func RuleIsHexColor() Rule {
+	return Rule{ID: IDIsHexColor, Fn: func(s *string) *Result {
+		if RegexpHexColor.MatchString(*s) {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleIsSha256 passes when *s is a 64-character hexadecimal SHA-256 digest.
+func RuleIsSha256() Rule {
+	return Rule{ID: IDIsSha256, Fn: func(s *string) *Result {
+		if len(*s) == 64 && RegexpSha256.MatchString(*s) {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleIsMACAddress passes when *s parses as an IEEE 802 MAC address.
+// Parsing is delegated to net.ParseMAC, which accepts EUI-48, EUI-64, and
+// 20-octet InfiniBand forms in either colon-, hyphen-, or dot-separated notation.
+func RuleIsMACAddress() Rule {
+	return Rule{ID: IDIsMACAddress, Fn: func(s *string) *Result {
+		if _, err := net.ParseMAC(*s); err == nil {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleIsCIDR passes when *s parses as a CIDR notation IP address and prefix
+// length (e.g. "192.0.2.0/24" or "2001:db8::/32"). Parsing is delegated to
+// net.ParseCIDR.
+func RuleIsCIDR() Rule {
+	return Rule{ID: IDIsCIDR, Fn: func(s *string) *Result {
+		if _, _, err := net.ParseCIDR(*s); err == nil {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleIsPort passes when *s is a decimal integer in the inclusive range
+// [1, 65535]. Port 0 is rejected because it is not a valid bind target
+// in practice (it means "any free port" to the OS, not a real port).
+// Leading signs ("+80", "-1") and whitespace are rejected — only a bare
+// unsigned decimal is accepted.
+func RuleIsPort() Rule {
+	return Rule{ID: IDIsPort, Fn: func(s *string) *Result {
+		n, err := strconv.ParseUint(*s, 10, 64)
+		if err != nil {
+			return &Result{Err: err}
+		}
+		if n < 1 || n > 65535 {
+			return &Result{}
+		}
+		return nil
+	}}
+}
+
+// RuleIsSlug passes when *s is a URL-safe slug: lowercase ASCII letters
+// and digits, separated by single hyphens. Leading/trailing hyphens and
+// consecutive hyphens are rejected. The empty string fails.
+func RuleIsSlug() Rule {
+	return Rule{ID: IDIsSlug, Fn: func(s *string) *Result {
+		if RegexpSlug.MatchString(*s) {
+			return nil
+		}
+		return &Result{}
+	}}
+}
+
+// RuleIsDataURI passes when *s is an RFC 2397 data URI of the form
+// "data:<mediatype>[;base64],<data>". The media type is required (a bare
+// "data:," is rejected) and only the printable URI character set is
+// permitted in the payload portion. This is a structural check; the
+// payload itself is not decoded.
+func RuleIsDataURI() Rule {
+	return Rule{ID: IDIsDataURI, Fn: func(s *string) *Result {
+		if RegexpDataURI.MatchString(*s) {
+			return nil
+		}
+		return &Result{}
 	}}
 }

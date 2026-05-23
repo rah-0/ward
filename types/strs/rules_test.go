@@ -2,6 +2,7 @@ package strs_test
 
 import (
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/rah-0/ward/types/strs"
@@ -865,5 +866,156 @@ func TestIsUsernameChars_AttackPayloads(t *testing.T) {
 				t.Errorf("attack payload should be rejected as username: %q", tc.input)
 			}
 		})
+	}
+}
+
+func TestIsHex(t *testing.T) {
+	for _, v := range []string{"0", "abcdef", "ABCDEF", "0123456789aBcDeF", "deadBEEF"} {
+		if !run(strs.RuleIsHex(), v) {
+			t.Errorf("%q should pass IsHex", v)
+		}
+	}
+	for _, v := range []string{"", "0x1234", "g", "12 34", "12-34"} {
+		if run(strs.RuleIsHex(), v) {
+			t.Errorf("%q should fail IsHex", v)
+		}
+	}
+}
+
+func TestIsHexColor(t *testing.T) {
+	for _, v := range []string{"#fff", "#FFF", "#ffffff", "#FFFFFF", "#ffffffff", "#1a2b3c", "#1a2b3c4d"} {
+		if !run(strs.RuleIsHexColor(), v) {
+			t.Errorf("%q should pass IsHexColor", v)
+		}
+	}
+	for _, v := range []string{"", "fff", "#ff", "#fffff", "#fffffff", "#gggggg", "#ffffffffa"} {
+		if run(strs.RuleIsHexColor(), v) {
+			t.Errorf("%q should fail IsHexColor", v)
+		}
+	}
+}
+
+func TestIsSha256(t *testing.T) {
+	// 64 hex chars
+	valid := "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+	if !run(strs.RuleIsSha256(), valid) {
+		t.Error("64-char hex should pass IsSha256")
+	}
+	if !run(strs.RuleIsSha256(), strings.ToUpper(valid)) {
+		t.Error("uppercase 64-char hex should pass IsSha256")
+	}
+	for _, v := range []string{
+		"",
+		valid[:63],              // too short
+		valid + "0",             // too long
+		strings.Repeat("g", 64), // non-hex
+	} {
+		if run(strs.RuleIsSha256(), v) {
+			t.Errorf("%q should fail IsSha256", v)
+		}
+	}
+}
+
+func TestIsMACAddress(t *testing.T) {
+	for _, v := range []string{
+		"00:00:5e:00:53:01",
+		"02-00-5e-10-00-00-00-01",
+		"00:00:00:00:fe:80:00:00:00:00:00:00:02:00:5e:10:00:00:00:01",
+		"0123.4567.89ab",
+	} {
+		if !run(strs.RuleIsMACAddress(), v) {
+			t.Errorf("%q should pass IsMACAddress", v)
+		}
+	}
+	for _, v := range []string{"", "not-a-mac", "00:00:5e:00:53", "zz:zz:zz:zz:zz:zz"} {
+		if run(strs.RuleIsMACAddress(), v) {
+			t.Errorf("%q should fail IsMACAddress", v)
+		}
+	}
+}
+
+func TestIsCIDR(t *testing.T) {
+	for _, v := range []string{"192.0.2.0/24", "10.0.0.0/8", "2001:db8::/32", "::/0"} {
+		if !run(strs.RuleIsCIDR(), v) {
+			t.Errorf("%q should pass IsCIDR", v)
+		}
+	}
+	for _, v := range []string{"", "192.0.2.0", "192.0.2.0/33", "not-a-cidr", "2001:db8::"} {
+		if run(strs.RuleIsCIDR(), v) {
+			t.Errorf("%q should fail IsCIDR", v)
+		}
+	}
+}
+
+func TestIsPort(t *testing.T) {
+	for _, v := range []string{"1", "80", "443", "8080", "65535"} {
+		if !run(strs.RuleIsPort(), v) {
+			t.Errorf("%q should pass IsPort", v)
+		}
+	}
+	for _, v := range []string{
+		"",
+		"0",
+		"-1",
+		"65536",
+		"abc",
+		"80a",
+		"8.0",
+		"+80",                  // leading sign
+		"-80",                  // negative
+		" 80",                  // leading whitespace
+		"80 ",                  // trailing whitespace
+		"0x50",                 // hex prefix
+		"080a",                 // trailing non-digit
+		"99999999999999999999", // overflow
+	} {
+		if run(strs.RuleIsPort(), v) {
+			t.Errorf("%q should fail IsPort", v)
+		}
+	}
+}
+
+func TestIsSlug(t *testing.T) {
+	for _, v := range []string{"hello", "hello-world", "a-b-c", "abc123", "a1-b2-c3"} {
+		if !run(strs.RuleIsSlug(), v) {
+			t.Errorf("%q should pass IsSlug", v)
+		}
+	}
+	for _, v := range []string{
+		"",
+		"Hello",        // uppercase
+		"-hello",       // leading hyphen
+		"hello-",       // trailing hyphen
+		"hello--world", // double hyphen
+		"hello world",  // space
+		"hello_world",  // underscore
+	} {
+		if run(strs.RuleIsSlug(), v) {
+			t.Errorf("%q should fail IsSlug", v)
+		}
+	}
+}
+
+func TestIsDataURI(t *testing.T) {
+	for _, v := range []string{
+		"data:text/plain,Hello%20World",
+		"data:text/plain;charset=utf-8,Hello",
+		"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=",
+		"data:application/json,%7B%22a%22%3A1%7D",
+	} {
+		if !run(strs.RuleIsDataURI(), v) {
+			t.Errorf("%q should pass IsDataURI", v)
+		}
+	}
+	for _, v := range []string{
+		"",
+		"data:,Hello",     // missing media type
+		"data:text/plain", // missing comma+body
+		"http://example.com",
+		"not a uri",
+	} {
+		if run(strs.RuleIsDataURI(), v) {
+			t.Errorf("%q should fail IsDataURI", v)
+		}
 	}
 }
