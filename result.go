@@ -13,13 +13,3 @@ type Result struct {
 	Arg2      any
 	Err       error
 }
-
-// As maps a slice of results to any type T using fn, allowing callers to
-// project failures into their own wire format without coupling to Result.
-func As[T any](results []*Result, fn func(*Result) T) []T {
-	out := make([]T, len(results))
-	for i, r := range results {
-		out[i] = fn(r)
-	}
-	return out
-}

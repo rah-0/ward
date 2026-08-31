@@ -4,7 +4,7 @@
 
 | Example | T | Demonstrates |
 |---|---|---|
-| [loginform](loginform/) | `string` | Basic usage, `As[T]`, structured error responses |
+| [loginform](loginform/) | `string` | Basic usage, `FailuresAs[T]`, structured error responses |
 | [phonenumber](phonenumber/) | `struct` | Multi-field struct, parametrized rules, accessing individual fields through `*T` |
 | [percentage](percentage/) | `float64` | Primitive type, numeric range rules, whole-number check |
 
@@ -16,7 +16,7 @@ Any type can be validated with ward — a struct, a primitive, a type alias, eve
 
 ### 1. Pick a TypeID
 
-Choose a `uint32` that uniquely identifies your type package. Ward's built-ins occupy 1–99. Examples use 100+. Pick anything above that for your own packages.
+Choose a `uint32` that uniquely identifies your type package. Ward reserves TypeIDs 1–99 for built-in packages; examples use 100+. Pick an application-owned value above that range.
 
 ```go
 const TypeID uint32 = 200
@@ -35,19 +35,21 @@ These are type aliases (using `=`), not new types. They exist purely for ergonom
 
 ```go
 func New(name string, ptr *YourType, rules ...Rule) *Field {
-    for i := range rules {
-        rules[i].TypeID = TypeID
+    owned := make([]Rule, len(rules))
+    copy(owned, rules)
+    for i := range owned {
+        owned[i].TypeID = TypeID
     }
     return &Field{
         TypeID: TypeID,
         Name:   name,
         Value:  ptr,
-        Rules:  rules,
+        Rules:  owned,
     }
 }
 ```
 
-`ptr` must point to the actual value being validated. Ward reads and writes through it directly — no copy is made. Sanitizers that mutate `*ptr` will update the source immediately.
+`ptr` must point to the actual value being validated. Ward reads and writes through it directly — the target value is not copied, so sanitizers that mutate `*ptr` update the source immediately. `New()` does copy the rule slice before stamping `TypeID`, preventing a caller-owned slice from being changed.
 
 ### 4. Write rule functions
 
@@ -120,10 +122,12 @@ type Rule  = ward.Rule[MyType]
 type Field = ward.Field[MyType]
 
 func New(name string, ptr *MyType, rules ...Rule) *Field {
-    for i := range rules {
-        rules[i].TypeID = TypeID
+    owned := make([]Rule, len(rules))
+    copy(owned, rules)
+    for i := range owned {
+        owned[i].TypeID = TypeID
     }
-    return &Field{TypeID: TypeID, Name: name, Value: ptr, Rules: rules}
+    return &Field{TypeID: TypeID, Name: name, Value: ptr, Rules: owned}
 }
 
 func RuleIsPositive() Rule {
@@ -147,5 +151,4 @@ n = -1
 v.Add(field)
 v.Run()
 v.HasFailures() // true
-v.Reset()
 ```

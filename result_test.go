@@ -6,13 +6,13 @@ import (
 	"github.com/rah-0/ward"
 )
 
-func TestAs(t *testing.T) {
-	results := []*ward.Result{
-		{FieldName: "email", RuleID: 1},
-		{FieldName: "username", RuleID: 2},
-	}
+func TestValidateFailuresAs(t *testing.T) {
+	v := ward.New().Add(
+		newStringField("email", "bad", failingRule),
+		newStringField("username", "bad", failingRule),
+	).Run()
 
-	names := ward.As(results, func(r *ward.Result) string { return r.FieldName })
+	names := v.FailuresAs(func(r *ward.Result) string { return r.FieldName })
 
 	if len(names) != 2 {
 		t.Fatalf("expected 2 names, got %d", len(names))
@@ -25,8 +25,8 @@ func TestAs(t *testing.T) {
 	}
 }
 
-func TestAs_Empty(t *testing.T) {
-	names := ward.As([]*ward.Result{}, func(r *ward.Result) string { return r.FieldName })
+func TestValidateFailuresAs_Empty(t *testing.T) {
+	names := ward.New().FailuresAs(func(r *ward.Result) string { return r.FieldName })
 	if len(names) != 0 {
 		t.Fatalf("expected empty slice, got %d elements", len(names))
 	}

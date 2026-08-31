@@ -1,10 +1,3 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/rah-0/ward)](https://goreportcard.com/report/github.com/rah-0/ward)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-<a href="https://www.buymeacoffee.com/rah.0" target="_blank">
-  <img src="https://cdn.buymeacoffee.com/buttons/v2/arial-orange.png" alt="Buy Me A Coffee" height="50" style="height:50px;">
-</a>
-
 # ward
 
 A typed, reflection-free, tag-free validation and sanitization library for Go.
@@ -16,6 +9,8 @@ A typed, reflection-free, tag-free validation and sanitization library for Go.
 - Generic: works with any type
 
 ## Install
+
+Ward requires Go 1.27 or newer.
 
 ```
 go get github.com/rah-0/ward
@@ -43,7 +38,7 @@ func handle(r *http.Request) {
 }
 ```
 
-`Validate`, `Field`, and the form struct must all be per-request. Sharing any of them across goroutines is a data race — `Field` holds a `*T` to the source value, and `Validate` accumulates results in a mutable slice.
+`Validate` is mutable and must be created per request. A `Field` holds a `*T` to caller-owned data; share a field or its source across goroutines only when every rule is read-only and no goroutine writes the value. Sanitizers necessarily require exclusive access.
 
 ## Sanitizers
 
@@ -63,17 +58,19 @@ Sanitizers write back through the pointer, so the source variable reflects the s
 
 ## Structured failure responses
 
-`ward.As[T]` maps failures to any type, making it straightforward to produce a JSON-serialisable response:
+`(*Validate).FailuresAs[T]` maps failures from the last run to an application-owned type, making it straightforward to shape a response for Go 1.27's `encoding/json/v2`:
 
 ```go
+import json "encoding/json/v2"
+
 type ValidationError struct {
     Field string `json:"field"`
     Rule  uint32 `json:"rule"`
-    Arg1  any    `json:"arg1,omitempty"`
-    Arg2  any    `json:"arg2,omitempty"`
+    Arg1  any    `json:"arg1,omitzero"`
+    Arg2  any    `json:"arg2,omitzero"`
 }
 
-errs := ward.As(v.Failures(), func(r *ward.Result) ValidationError {
+errs := v.FailuresAs(func(r *ward.Result) ValidationError {
     return ValidationError{
         Field: r.FieldName,
         Rule:  r.RuleID,
@@ -83,10 +80,12 @@ errs := ward.As(v.Failures(), func(r *ward.Result) ValidationError {
 })
 
 // json.Marshal(errs) →
-// [{"field":"Password","rule":3,"arg1":8},{"field":"Email","rule":10}]
+// [{"field":"Email","rule":10},{"field":"Password","rule":3,"arg1":8}]
 ```
 
-`As` never touches the original `[]*Result` slice — it projects into whatever shape your API layer needs.
+The `omitzero` tags omit only nil argument interfaces. JSON v2 has no default representation for `time.Duration`, so applications exposing duration-rule arguments should convert them to their API representation in the `FailuresAs` callback or register a v2 marshaler.
+
+`FailuresAs` preserves the stored slice and failure order while projecting into whatever shape your API layer needs. Its callback receives the original `*Result` pointers, so treat them as read-only if the stored failures must remain unchanged.
 
 ## Frontend integration
 
@@ -107,36 +106,46 @@ Similarly, `RuleLengthBetween(5, 50)` returns `Arg1=5, Arg2=50`, and `RuleContai
 Every type package exports an `IDs` map (`map[uint32]string`) associating each rule ID with its name, and a `TypeID` constant identifying the package. These can be served from a single endpoint so the frontend always knows what validations exist:
 
 ```go
+import json "encoding/json/v2"
+
 // GET /api/validation-rules
 func GetValidationRules(w http.ResponseWriter, r *http.Request) {
     rules := map[uint32]map[uint32]string{
         strs.TypeID: strs.IDs,
         // add further type packages here as the API grows
     }
-    json.NewEncoder(w).Encode(rules)
+    if err := json.MarshalWrite(w, rules, json.Deterministic(true)); err != nil {
+        return
+    }
 }
 
 // response:
 // {"2":{"2":"NotEmpty","3":"LengthMin","4":"LengthMax",...}}
 ```
 
-When a failure arrives at the frontend with `TypeID=2, RuleID=3`, it looks up TypeID 2 → strs, RuleID 3 → `LengthMin`, and can display the right message using `Arg1` as the actual minimum value. The frontend never hardcodes validation logic — it derives everything from what the backend exposes.
+When a failure arrives at the frontend with `TypeID=2, RuleID=3`, it looks up TypeID 2 → strs, RuleID 3 → `LengthMin`, and can use `Arg1` as the actual minimum value. This keeps numeric rule IDs and configured constraint values synchronized with the backend; the frontend still owns its message templates.
 
 Applications can register custom rules in two ways:
 
-**Automatic ID assignment** — `IDsAdd` picks the next available ID, avoiding conflicts with built-in or future rules:
+**Automatic ID assignment** — `IDsAdd` picks an ID one greater than the map's current maximum:
 
 ```go
-idPasswordsMatch    := strs.IDsAdd("PasswordsMatch")
-idUsernameAvailable := strs.IDsAdd("UsernameAvailable")
+var (
+    idPasswordsMatch    = strs.IDsAdd("PasswordsMatch")
+    idUsernameAvailable = strs.IDsAdd("UsernameAvailable")
+)
 ```
 
 **Manual ID assignment** — write directly to the map when you need a specific ID:
 
 ```go
-strs.IDs[1000] = "PasswordsMatch"
-strs.IDs[1001] = "UsernameAvailable"
+func init() {
+    strs.IDs[1000] = "PasswordsMatch"
+    strs.IDs[1001] = "UsernameAvailable"
+}
 ```
+
+Register custom IDs during application initialization. The exported `IDs` maps are mutable and are not safe to write while other goroutines read or modify them. Manually assigned IDs must not overwrite existing entries.
 
 ## StopOnFail
 
@@ -162,13 +171,13 @@ See [`examples/`](examples/) for the full implementation guide and the following
 
 | Example | T | Demonstrates |
 |---|---|---|
-| [loginform](examples/loginform/) | `string` | Basic usage, `As[T]`, structured error responses |
+| [loginform](examples/loginform/) | `string` | Basic usage, `FailuresAs[T]`, structured error responses |
 | [phonenumber](examples/phonenumber/) | `struct` | Multi-field struct, parametrized rules |
 | [percentage](examples/percentage/) | `float64` | Primitive type, numeric range rules |
 
 ## Benchmarks
 
-Full comparison against `go-playground/validator` and `ozzo-validation`:
+Historical comparison against `go-playground/validator` and `ozzo-validation`:
 [github.com/rah-0/benchmarks/tree/master/validator](https://github.com/rah-0/benchmarks/tree/master/validator#readme)
 
 ## ☕ Support

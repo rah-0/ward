@@ -41,7 +41,6 @@ if v.HasFailures() {
         fmt.Println(f.FieldName, f.RuleID)
     }
 }
-v.Reset()
 ```
 
 ## Rules

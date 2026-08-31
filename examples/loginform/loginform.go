@@ -28,7 +28,7 @@ func Validate(form *Form) ([]ValidationError, bool) {
 		return nil, true
 	}
 
-	errs := ward.As(v.Failures(), func(r *ward.Result) ValidationError {
+	errs := v.FailuresAs(func(r *ward.Result) ValidationError {
 		return ValidationError{
 			Field: r.FieldName,
 			Rule:  r.RuleID,

@@ -45,3 +45,14 @@ func (v *Validate) HasFailures() bool {
 func (v *Validate) Failures() []*Result {
 	return v.results
 }
+
+// FailuresAs projects the failures from the last Run into values of type T.
+// It preserves failure order and does not modify the stored slice itself. fn
+// receives the original Result pointers and may mutate them.
+func (v *Validate) FailuresAs[T any](fn func(*Result) T) []T {
+	out := make([]T, len(v.results))
+	for i, result := range v.results {
+		out[i] = fn(result)
+	}
+	return out
+}

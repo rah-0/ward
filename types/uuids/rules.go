@@ -1,6 +1,6 @@
 // Package uuids provides UUID validation rules for ward.
 // The underlying type is string. UUIDs are parsed and inspected using
-// github.com/google/uuid; no regex is involved.
+// the standard library uuid package; no regex is involved.
 //
 // Rules in this package are version-tagged. Each version-specific rule
 // fully asserts the relevant UUID version, so callers can chain them
@@ -9,7 +9,7 @@
 package uuids
 
 import (
-	"github.com/google/uuid"
+	"uuid"
 
 	"github.com/rah-0/ward"
 )
@@ -75,7 +75,7 @@ func RuleIsValidV4() Rule {
 		if err != nil {
 			return &Result{Err: err}
 		}
-		if id.Version() != 4 {
+		if uuidVersion(id) != 4 {
 			return &Result{}
 		}
 		return nil
@@ -92,10 +92,10 @@ func RuleIsNotNilV4() Rule {
 		if err != nil {
 			return &Result{Err: err}
 		}
-		if id == uuid.Nil {
+		if id == uuid.Nil() {
 			return &Result{}
 		}
-		if id.Version() != 4 {
+		if uuidVersion(id) != 4 {
 			return &Result{}
 		}
 		return nil
@@ -114,7 +114,7 @@ func RuleOneOfV4(allowed ...string) Rule {
 		if err != nil {
 			return &Result{Err: err, Arg1: allowed}
 		}
-		if id.Version() != 4 {
+		if uuidVersion(id) != 4 {
 			return &Result{Arg1: allowed}
 		}
 		for _, a := range parsed {
@@ -136,7 +136,7 @@ func RuleNotOneOfV4(excluded ...string) Rule {
 		if err != nil {
 			return &Result{Err: err}
 		}
-		if id.Version() != 4 {
+		if uuidVersion(id) != 4 {
 			return &Result{}
 		}
 		for _, e := range parsed {
@@ -155,7 +155,7 @@ func parseUUIDsV4(ss []string) []uuid.UUID {
 	out := make([]uuid.UUID, 0, len(ss))
 	for _, s := range ss {
 		id, err := uuid.Parse(s)
-		if err != nil || id.Version() != 4 {
+		if err != nil || uuidVersion(id) != 4 {
 			continue
 		}
 		out = append(out, id)
@@ -221,6 +221,10 @@ func parseUUIDs(ss []string) []uuid.UUID {
 	return out
 }
 
+func uuidVersion(id uuid.UUID) byte {
+	return id[6] >> 4
+}
+
 // -----------------------------------------------------------------------------
 // Version-agnostic identity rules
 // -----------------------------------------------------------------------------
@@ -246,7 +250,7 @@ func RuleIsNil() Rule {
 		if err != nil {
 			return &Result{Err: err}
 		}
-		if id != uuid.Nil {
+		if id != uuid.Nil() {
 			return &Result{}
 		}
 		return nil
@@ -261,7 +265,7 @@ func RuleIsNotNil() Rule {
 		if err != nil {
 			return &Result{Err: err}
 		}
-		if id == uuid.Nil {
+		if id == uuid.Nil() {
 			return &Result{}
 		}
 		return nil
@@ -269,16 +273,14 @@ func RuleIsNotNil() Rule {
 }
 
 // RuleIsVersion passes when *s parses as a UUID whose version equals n.
-// Valid versions are 1–5 in RFC 4122 and 6–7 in the draft revisions
-// implemented by google/uuid. The nil UUID has version 0 and only
-// matches n == 0.
+// The nil UUID has version 0 and only matches n == 0.
 func RuleIsVersion(n int) Rule {
 	return Rule{ID: IDIsVersion, Fn: func(s *string) *Result {
 		id, err := uuid.Parse(*s)
 		if err != nil {
 			return &Result{Err: err, Arg1: n}
 		}
-		if int(id.Version()) != n {
+		if int(uuidVersion(id)) != n {
 			return &Result{Arg1: n}
 		}
 		return nil
@@ -296,7 +298,7 @@ func RuleIsValidV1() Rule {
 		if err != nil {
 			return &Result{Err: err}
 		}
-		if id.Version() != 1 {
+		if uuidVersion(id) != 1 {
 			return &Result{}
 		}
 		return nil
@@ -311,7 +313,7 @@ func RuleIsValidV3() Rule {
 		if err != nil {
 			return &Result{Err: err}
 		}
-		if id.Version() != 3 {
+		if uuidVersion(id) != 3 {
 			return &Result{}
 		}
 		return nil
@@ -326,7 +328,7 @@ func RuleIsValidV5() Rule {
 		if err != nil {
 			return &Result{Err: err}
 		}
-		if id.Version() != 5 {
+		if uuidVersion(id) != 5 {
 			return &Result{}
 		}
 		return nil
@@ -334,14 +336,14 @@ func RuleIsValidV5() Rule {
 }
 
 // RuleIsValidV6 passes when *s parses as a UUID and its version is 6
-// (reordered time, draft RFC 9562).
+// (reordered time, RFC 9562).
 func RuleIsValidV6() Rule {
 	return Rule{ID: IDIsValidV6, Fn: func(s *string) *Result {
 		id, err := uuid.Parse(*s)
 		if err != nil {
 			return &Result{Err: err}
 		}
-		if id.Version() != 6 {
+		if uuidVersion(id) != 6 {
 			return &Result{}
 		}
 		return nil
@@ -349,7 +351,7 @@ func RuleIsValidV6() Rule {
 }
 
 // RuleIsValidV7 passes when *s parses as a UUID and its version is 7
-// (Unix-time-ordered, draft RFC 9562). v7 is increasingly preferred over
+// (Unix-time-ordered, RFC 9562). v7 is increasingly preferred over
 // v4 for new sortable identifiers.
 func RuleIsValidV7() Rule {
 	return Rule{ID: IDIsValidV7, Fn: func(s *string) *Result {
@@ -357,7 +359,7 @@ func RuleIsValidV7() Rule {
 		if err != nil {
 			return &Result{Err: err}
 		}
-		if id.Version() != 7 {
+		if uuidVersion(id) != 7 {
 			return &Result{}
 		}
 		return nil

@@ -72,9 +72,9 @@ func TestIsValidV4_RejectsMalformed(t *testing.T) {
 	}
 }
 
-// TestIsValidV4_AcceptsAlternateForms documents that google/uuid.Parse accepts
-// several non-canonical encodings besides the hyphenated form. These all decode
-// to the same underlying v4 UUID, so IsValidV4 accepts them.
+// TestIsValidV4_AcceptsAlternateForms documents the non-canonical encodings
+// accepted by uuid.Parse. These all decode to the same underlying v4 UUID, so
+// IsValidV4 accepts them.
 func TestIsValidV4_AcceptsAlternateForms(t *testing.T) {
 	for _, v := range []string{
 		"550e8400e29b41d4a716446655440000",              // raw hex, no hyphens
@@ -83,6 +83,17 @@ func TestIsValidV4_AcceptsAlternateForms(t *testing.T) {
 	} {
 		if !run(uuids.RuleIsValidV4(), v) {
 			t.Errorf("%q should pass IsValidV4 (accepted by uuid.Parse)", v)
+		}
+	}
+}
+
+func TestIsValidV4_RejectsUnsupportedAlternateForms(t *testing.T) {
+	for _, v := range []string{
+		"URN:UUID:550e8400-e29b-41d4-a716-446655440000", // prefix must be lowercase
+		"[550e8400-e29b-41d4-a716-446655440000]",        // only braces are supported
+	} {
+		if run(uuids.RuleIsValidV4(), v) {
+			t.Errorf("%q should fail IsValidV4 (unsupported alternate form)", v)
 		}
 	}
 }
@@ -257,7 +268,7 @@ const (
 	// v5: SHA-1 hash of "www.widgets.com" in the DNS namespace.
 	validV5 = "21f7f8de-8051-5b89-8680-0195ef798b6a"
 
-	// v6: time-ordered, RFC 9562 draft.
+	// v6: time-ordered, RFC 9562.
 	validV6 = "1ec9414c-232a-6b00-b3c8-9e6bdeced846"
 )
 

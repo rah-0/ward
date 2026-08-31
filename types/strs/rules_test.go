@@ -529,9 +529,12 @@ func TestIsJSON(t *testing.T) {
 		`{"a":}`,
 		`undefined`,
 		`{a:1}`,
+		`{"a":1,"a":2}`,    // duplicate object name
+		"{\"a\":\"\xff\"}", // invalid UTF-8
+		`{"a":"\ud800"}`,   // lone surrogate escape
 	} {
 		if run(strs.RuleIsJSON(), v) {
-			t.Errorf("%q should not be valid JSON", v)
+			t.Errorf("%q should be rejected as JSON", v)
 		}
 	}
 }
