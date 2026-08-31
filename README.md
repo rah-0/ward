@@ -87,6 +87,8 @@ The `omitzero` tags omit only nil argument interfaces. JSON v2 has no default re
 
 `FailuresAs` preserves the stored slice and failure order while projecting into whatever shape your API layer needs. Its callback receives the original `*Result` pointers, so treat them as read-only if the stored failures must remain unchanged.
 
+For an arbitrary `[]*Result`, use `ward.As(results, fn)`. `FailuresAs` is the convenience form for failures stored by a validator.
+
 ## Frontend integration
 
 ### Arg1 and Arg2

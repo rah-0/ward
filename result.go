@@ -13,3 +13,13 @@ type Result struct {
 	Arg2      any
 	Err       error
 }
+
+// As projects results into values of type T while preserving their order.
+// fn receives the original Result pointers and may mutate them.
+func As[T any](results []*Result, fn func(*Result) T) []T {
+	out := make([]T, len(results))
+	for i, result := range results {
+		out[i] = fn(result)
+	}
+	return out
+}
