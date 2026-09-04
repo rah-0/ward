@@ -518,9 +518,12 @@ func TestIsJSON(t *testing.T) {
 		`true`,
 		`false`,
 		`null`,
+		`{"a":1,"a":2}`,    // encoding/json.Valid permits duplicate object names
+		"{\"a\":\"\xff\"}", // encoding/json.Valid permits invalid UTF-8
+		`{"a":"\ud800"}`,   // encoding/json.Valid permits lone surrogate escapes
 	} {
 		if !run(strs.RuleIsJSON(), v) {
-			t.Errorf("%q should be valid JSON", v)
+			t.Errorf("%q should be accepted by RuleIsJSON", v)
 		}
 	}
 	for _, v := range []string{
@@ -529,9 +532,6 @@ func TestIsJSON(t *testing.T) {
 		`{"a":}`,
 		`undefined`,
 		`{a:1}`,
-		`{"a":1,"a":2}`,    // duplicate object name
-		"{\"a\":\"\xff\"}", // invalid UTF-8
-		`{"a":"\ud800"}`,   // lone surrogate escape
 	} {
 		if run(strs.RuleIsJSON(), v) {
 			t.Errorf("%q should be rejected as JSON", v)

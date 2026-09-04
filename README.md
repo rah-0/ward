@@ -58,10 +58,11 @@ Sanitizers write back through the pointer, so the source variable reflects the s
 
 ## Structured failure responses
 
-`(*Validate).FailuresAs[T]` maps failures from the last run to an application-owned type, making it straightforward to shape a response for Go 1.27's `encoding/json/v2`:
+`(*Validate).FailuresAs[T]` maps failures from the last run to an application-owned type,
+making it straightforward to shape a response with the standard library's `encoding/json`:
 
 ```go
-import json "encoding/json/v2"
+import "encoding/json"
 
 type ValidationError struct {
     Field string `json:"field"`
@@ -83,7 +84,9 @@ errs := v.FailuresAs(func(r *ward.Result) ValidationError {
 // [{"field":"Email","rule":10},{"field":"Password","rule":3,"arg1":8}]
 ```
 
-The `omitzero` tags omit only nil argument interfaces. JSON v2 has no default representation for `time.Duration`, so applications exposing duration-rule arguments should convert them to their API representation in the `FailuresAs` callback or register a v2 marshaler.
+The `omitzero` tags omit nil argument interfaces. `encoding/json` encodes `time.Duration` as a
+JSON number containing its nanosecond count, so applications using another API representation
+should convert duration-rule arguments in the `FailuresAs` callback.
 
 `FailuresAs` preserves the stored slice and failure order while projecting into whatever shape your API layer needs. Its callback receives the original `*Result` pointers, so treat them as read-only if the stored failures must remain unchanged.
 
@@ -108,7 +111,7 @@ Similarly, `RuleLengthBetween(5, 50)` returns `Arg1=5, Arg2=50`, and `RuleContai
 Every type package exports an `IDs` map (`map[uint32]string`) associating each rule ID with its name, and a `TypeID` constant identifying the package. These can be served from a single endpoint so the frontend always knows what validations exist:
 
 ```go
-import json "encoding/json/v2"
+import "encoding/json"
 
 // GET /api/validation-rules
 func GetValidationRules(w http.ResponseWriter, r *http.Request) {
@@ -116,7 +119,7 @@ func GetValidationRules(w http.ResponseWriter, r *http.Request) {
         strs.TypeID: strs.IDs,
         // add further type packages here as the API grows
     }
-    if err := json.MarshalWrite(w, rules, json.Deterministic(true)); err != nil {
+    if err := json.NewEncoder(w).Encode(rules); err != nil {
         return
     }
 }

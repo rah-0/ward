@@ -3,7 +3,7 @@ package strs
 
 import (
 	"encoding/base64"
-	"encoding/json/jsontext"
+	"encoding/json"
 	"html"
 	"net"
 	"net/mail"
@@ -527,11 +527,10 @@ func RuleIsBase64URL() Rule {
 	}}
 }
 
-// RuleIsJSON passes when *s is a syntactically valid JSON value under
-// jsontext's RFC 7493 defaults, including valid UTF-8 and unique object names.
+// RuleIsJSON passes when encoding/json.Valid accepts *s.
 func RuleIsJSON() Rule {
 	return Rule{ID: IDIsJSON, Fn: func(s *string) *Result {
-		if jsontext.Value(*s).IsValid() {
+		if json.Valid([]byte(*s)) {
 			return nil
 		}
 		return &Result{}
